@@ -1,6 +1,6 @@
 //
-//  testfApp.swift
-//  testf
+//  JasmineApp.swift
+//  Jasmine
 //
 //  Created by Shahad Alharbi on 10/25/25.
 //
@@ -11,14 +11,16 @@ import Supabase
 @main
 struct JasmineApp: App {
     @State private var userID: String? = nil
-
+    
     var body: some Scene {
         WindowGroup {
             Group {
                 if userID != nil {
-                    ContentView()
+                    ContentView(onSignOut: {
+                        try? await Supa.client.auth.signOut()
+                        await MainActor.run { self.userID = nil }
+                    })
                 } else {
-                    // ✅ مرري الإغلاق المطلوب
                     SignView { uid in
                         self.userID = uid
                     }
@@ -26,7 +28,7 @@ struct JasmineApp: App {
             }
             .preferredColorScheme(.light)
             .task {
-                // محاولة جلب جلسة حالية
+                // يحاول يسترجع جلسة قديمة
                 if let session = try? await Supa.client.auth.session {
                     userID = session.user.id.uuidString
                 } else if let session = Supa.client.auth.currentSession {

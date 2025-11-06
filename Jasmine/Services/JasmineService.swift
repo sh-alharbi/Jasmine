@@ -1,6 +1,6 @@
 //
 //  JasmineService.swift
-//  testf
+//  Jasmine
 //
 //  Created by Shahad Alharbi on 11/5/25.
 //
@@ -35,7 +35,6 @@ struct ActivityLogRow: Codable {
 enum JasmineService {
     static let bucket = "skin-images"
 
-    // 1) رفع الصورة إلى Storage وتسجيل metadata في skin_images
     static func uploadSkinImage(_ image: UIImage, userID: String) async throws -> (imageID: String, path: String) {
         guard let data = image.jpegData(compressionQuality: 0.9) else {
             throw NSError(domain: "ImageEncoding", code: -1)
@@ -44,7 +43,6 @@ enum JasmineService {
         let imageID = UUID().uuidString
         let path = "users/\(userID)/\(imageID).jpg"
 
-        // options: FileOptions(..) — واجهة supabase-swift الحديثة
         try await Supa.client.storage
             .from(bucket)
             .upload(
@@ -53,7 +51,6 @@ enum JasmineService {
                 options: FileOptions(contentType: "image/jpeg", upsert: false)
             )
 
-        // كتابة صف skin_images
         let row = SkinImageRow(
             imageid: imageID,
             userid: userID,
@@ -76,7 +73,7 @@ enum JasmineService {
     }
 
 
-    // 3) حفظ نتيجة التحليل
+    //  حفظ نتيجة التحليل
     static func saveAnalysis(imageID: String, label: String, explanation: String) async throws {
         let row = AnalysisRow(
             analysisid: UUID().uuidString,
@@ -90,9 +87,9 @@ enum JasmineService {
             .execute()
     }
 
-    // 4) وضع علامة الروتين + زيادة النقاط (قراءة ثم كتابة)
+    //  وضع علامة الروتين + زيادة النقاط (ما استخدمناها لسا)
     static func markRoutine(userID: String, routine: String, note: String?) async throws {
-        // أ) سجّل الـ log
+        // تسجل Log ف
         let log = ActivityLogRow(
             logid: UUID().uuidString,
             userid: userID,
@@ -106,7 +103,7 @@ enum JasmineService {
             .insert(log)
             .execute()
 
-        // ب) هات النقاط الحالية
+        // يجيب النقاط الحاليه
         struct RewardRow: Decodable { let points: Int? }
 
         let res = try await Supa.client
@@ -122,7 +119,7 @@ enum JasmineService {
 
 
      
-
+//حدّث نقاط المستخدم في جدول reward_system
         struct RewardUpdate: Encodable { let points: Int }
 
         _ = try await Supa.client

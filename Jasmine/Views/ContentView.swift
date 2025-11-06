@@ -1,3 +1,10 @@
+//
+//  ContentView.swift
+//  Jasmine
+//
+//  Created by Shahad Alharbi on 11/5/25.
+//
+
 import SwiftUI
 import PhotosUI
 
@@ -19,11 +26,13 @@ struct ContentView: View {
     @State private var saveToHistory = false
     @State private var isSaving = false
     @State private var infoMsg: String? = nil
+    
+    let onSignOut: () async -> Void
 
     var body: some View {
         NavigationView {
             VStack(spacing: 24) {
-
+                
                 HStack(spacing: 30) {
                     // الدوائر الخضراء الي تطلع فوق الشاشه
                     ForEach(1...3, id: \.self) { i in
@@ -36,13 +45,13 @@ struct ContentView: View {
                         }
                     }
                 }
-
+                
                 // STEP 1 = يحط الصورة
                 if step == 1 {
                     VStack(spacing: 16) {
                         Text("Upload Photo")
                             .font(.title2).bold()
-
+                        
                         PhotosPicker(selection: $selectedItem, matching: .images) {
                             VStack {
                                 Image(systemName: "icloud.and.arrow.up")
@@ -66,7 +75,7 @@ struct ContentView: View {
                                 }
                             }
                         }
-
+                        
                         if let selectedImage {
                             // بعد ما اختار وحط الصوره بنعدل مكانها وحجمها بالواجهه
                             Image(uiImage: selectedImage)
@@ -75,7 +84,7 @@ struct ContentView: View {
                                 .frame(width: 220, height: 160)
                                 .cornerRadius(12)
                         }
-
+                        
                         Button("Continue") {
                             step = 2
                         }
@@ -84,7 +93,7 @@ struct ContentView: View {
                         .disabled(selectedImage == nil)
                     }
                 }
-
+                
                 // STEP 2 = التحليل
                 else if step == 2 {
                     ScrollView {
@@ -92,7 +101,7 @@ struct ContentView: View {
                             Text("Analyzing...")
                                 .font(.title2)
                                 .bold()
-
+                            
                             if isLoading {
                                 ProgressView()
                                 // اذا فعلا ال fastapi طلعت لنا بنتيجة
@@ -103,9 +112,9 @@ struct ContentView: View {
                                     Text(result.top1.label.capitalized)
                                         .foregroundColor(.green)
                                         .font(.headline)
-
+                                    
                                     Divider()
-// اذا التشات جبتي فعلا رجع شرح
+                                    // اذا التشات جبتي فعلا رجع شرح
                                     if let expl = result.chatgpt_explanation, !expl.isEmpty {
                                         Text("Explanation of the Disease")
                                             .font(.headline)
@@ -115,7 +124,7 @@ struct ContentView: View {
                                             .multilineTextAlignment(.leading)
                                         Divider()
                                     }
-
+                                    
                                     Button("Continue") {
                                         step = 3
                                     }
@@ -130,7 +139,7 @@ struct ContentView: View {
                                 .buttonStyle(.borderedProminent)
                                 .tint(.green)
                                 .disabled(selectedImage == nil)
-
+                                
                                 if let errorMsg {
                                     Text(errorMsg)
                                         .foregroundColor(.red)
@@ -149,22 +158,22 @@ struct ContentView: View {
                         }
                     }
                 }
-
+                
                 // STEP 3
                 else if step == 3 {
                     VStack(spacing: 16) {
                         Text("Save your result to history.")
                             .font(.title3)
                             .padding(.top)
-
+                        
                         Toggle("Save to history", isOn: $saveToHistory)
                             .tint(.green)
                             .padding(.horizontal)
-
+                        
                         if isSaving {
                             ProgressView()
                         }
-
+                        
                         if let infoMsg {
                             Text(infoMsg)
                                 .font(.footnote)
@@ -172,20 +181,20 @@ struct ContentView: View {
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal)
                         }
-
+                        
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 60))
                             .foregroundColor(.green)
                             .padding(.top, 6)
-
+                        
                         HStack(spacing: 12) {
                             Button("Finish") {
-                                Task { await maybeSaveToHistory() }
+                                Task { await SaveToHistory() }
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(.green)
                             .disabled(isSaving)
-
+                            
                             Button("Start New Analysis") {
                                 step = 1
                                 result = nil
@@ -199,15 +208,21 @@ struct ContentView: View {
                         .padding(.top, 6)
                     }
                 }
-
+                
                 Spacer(minLength: 0)
             }
             .padding()
-            .navigationTitle("Skin AI")
+            .navigationTitle("Jasmine")
+            .toolbar {
+                Button("Sign out") {
+                    Task { await onSignOut() }
+                }
+            }
         }
     }
 
     func analyze() async {
+        // 1)  تأكيد وجود صورة مختارة من اليوزر
         guard let selectedImage else {
             errorMsg = "Please select a photo first."
             return
@@ -217,16 +232,19 @@ struct ContentView: View {
         defer { isLoading = false }
 
         do {
+            //  أرسل الصورة وانتظر الرد( 2
             let res = try await SkinAPIService.shared.predict(image: selectedImage, topk: 1)
             self.result = res
         } catch {
+            // 3) خزّن النتيجة لعرضها في Step 2
+
             self.result = nil
             self.errorMsg = error.localizedDescription
             print("❌ Error:", error.localizedDescription)
         }
     }
 
-    func maybeSaveToHistory() async {
+    func SaveToHistory() async {
         guard saveToHistory else {
             infoMsg = "Skipped saving. You can enable the toggle to save next time."
             return
@@ -254,17 +272,13 @@ struct ContentView: View {
                 options: FileOptions(contentType: "image/jpeg", upsert: true) // حدّدنا النوع لتجنب "Cannot infer contextual base"
             )
 
-            // رابط عام إذا البكت Public (ممكن ما تحتاجينه الآن)
             let publicURL = try storage.getPublicURL(path: fileName).absoluteString
-            _ = publicURL  // لمنع التحذير لو ما استخدمناه
+            _ = publicURL
 
-            // 2) احضري المستخدم الحالي (Auth)
             let userId: String
             if let session = try? await Supa.client.auth.session {
-                // جلسة محدثة (قد تُحدّث التوكن داخليًا)
                 userId = session.user.id.uuidString
             } else if let session = Supa.client.auth.currentSession {
-                // جلسة حالية بدون تحقق/تحديث
                 userId = session.user.id.uuidString
             } else {
                 infoMsg = "Saved file. Login required to write DB row."
@@ -272,7 +286,6 @@ struct ContentView: View {
             }
 
 
-            // 3) أكتبي صف في skin_images (نخزن الـ path فقط)
             struct Row: Encodable {
                 let imageid: String
                 let userid: String
@@ -284,12 +297,12 @@ struct ContentView: View {
                 imageid: UUID().uuidString,
                 userid: userId,
                 uploaddate: isoDateString(Date()),
-                storagepath: fileName   // نخزن المسار، ونطلع signed URL عند العرض
+                storagepath: fileName
             )
 
             try await Supa.client
                 .from("skin_images")
-                .insert(row)   // ✅ بدون label values:
+                .insert(row)
                 .execute()
 
             infoMsg = "Saved to history ✅"
@@ -301,7 +314,6 @@ struct ContentView: View {
         }
     }
 
-    // Helper
     func isoDateString(_ date: Date) -> String {
         let f = DateFormatter()
         f.calendar = Calendar(identifier: .gregorian)
