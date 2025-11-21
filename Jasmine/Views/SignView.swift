@@ -157,17 +157,23 @@ struct SignView: View {
     }
 
     @MainActor
-    private func handleSignIn() async {
-        error = nil; isBusy = true
-        defer { isBusy = false }
-        do {
-            _ = try await Supa.client.auth.signIn(email: email, password: password)
-            let session = try await Supa.client.auth.session
-            onSignedIn(session.user.id.uuidString)
-        } catch {
-            self.error = error.localizedDescription
-        }
-    }
+       private func handleSignIn() async {
+           error = nil; isBusy = true
+           defer { isBusy = false }
+           do {
+               _ = try await Supa.client.auth.signIn(email: email, password: password)
+               let session = try await Supa.client.auth.session
+               onSignedIn(session.user.id.uuidString)
+           } catch {
+               let msg = error.localizedDescription.lowercased()
+
+               if msg.contains("invalid login") {
+                   self.error = "Account not found. Please sign up first."
+               } else {
+                   self.error = "Login failed. Please try again."
+               }
+           }
+       }
 
     @MainActor
     private func forgotPassword() async {
