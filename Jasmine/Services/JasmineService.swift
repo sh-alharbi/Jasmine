@@ -20,21 +20,22 @@ struct AnalysisRow: Codable {
     let analysisid: String
     let imageid: String
     let conditionlabel: String
-    let explanation: String
+    let recommendation: String
 }
 
-struct ActivityLogRow: Codable {
-    let logid: String
+struct DailyRoutineRow: Codable {
+    let routineid: String
     let userid: String
-    let date: String
     let routinename: String
     let isdone: Bool
-    let note: String?
+    let time: String?
+    let routinetype: String?
 }
 
 enum JasmineService {
     static let bucket = "skin-images"
 
+    // رفع صورة البشرة وتخزينها في Storage + جدول skin_images
     static func uploadSkinImage(_ image: UIImage, userID: String) async throws -> (imageID: String, path: String) {
         guard let data = image.jpegData(compressionQuality: 0.9) else {
             throw NSError(domain: "ImageEncoding", code: -1)
@@ -65,21 +66,13 @@ enum JasmineService {
         return (imageID, path)
     }
 
-    static func signedURLString(for path: String) async throws -> String {
-        let url: URL = try await Supa.client.storage
-            .from(bucket)
-            .createSignedURL(path: path, expiresIn: 60 * 10)
-        return url.absoluteString
-    }
-
-
-    //  حفظ نتيجة التحليل
-    static func saveAnalysis(imageID: String, label: String, explanation: String) async throws {
+    // حفظ نتيجة التحليل في جدول analysis
+    static func saveAnalysis(imageID: String, label: String, recommendation: String) async throws {
         let row = AnalysisRow(
             analysisid: UUID().uuidString,
             imageid: imageID,
             conditionlabel: label,
-            explanation: explanation
+            recommendation: recommendation
         )
         _ = try await Supa.client
             .from("analysis")
@@ -87,23 +80,28 @@ enum JasmineService {
             .execute()
     }
 
-    //  وضع علامة الروتين + زيادة النقاط (ما استخدمناها لسا)
-    static func markRoutine(userID: String, routine: String, note: String?) async throws {
-        // تسجل Log ف
-        let log = ActivityLogRow(
-            logid: UUID().uuidString,
+    //  وضع علامة الروتين + زيادة النقاط
+    static func markRoutine(userID: String, routine: String, routineType: String? = nil) async throws {
+        // تسجل الروتين في جدول daily_routine
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
+        let timeString = formatter.string(from: Date())
+
+        let log = DailyRoutineRow(
+            routineid: UUID().uuidString,
             userid: userID,
-            date: ISO8601DateFormatter().string(from: Date()),
             routinename: routine,
             isdone: true,
-            note: note
+            time: timeString,
+            routinetype: routineType
         )
+
         _ = try await Supa.client
-            .from("activity_logs")
+            .from("daily_routine")
             .insert(log)
             .execute()
 
-        // يجيب النقاط الحاليه
+        // يجيب النقاط الحاليه من جدول reward_system
         struct RewardRow: Decodable { let points: Int? }
 
         let res = try await Supa.client
@@ -114,12 +112,10 @@ enum JasmineService {
             .execute()
 
         let reward = try JSONDecoder().decode(RewardRow.self, from: res.data)
-        let current = reward.points ?? 0
-        let newPoints = current + 5
+        let currentPoints = reward.points ?? 0
+        let newPoints = currentPoints + 5
 
-
-     
-//حدّث نقاط المستخدم في جدول reward_system
+        // حدّث نقاط المستخدم في جدول reward_system
         struct RewardUpdate: Encodable { let points: Int }
 
         _ = try await Supa.client
@@ -127,6 +123,5 @@ enum JasmineService {
             .update(RewardUpdate(points: newPoints))
             .eq("userid", value: userID)
             .execute()
-
     }
 }
