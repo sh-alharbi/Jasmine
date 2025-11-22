@@ -323,3 +323,9 @@ struct ContentView: View {
         return f.string(from: date)
     }
 }
+
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView(onSignOut: { })
+    }
+}

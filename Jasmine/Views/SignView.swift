@@ -198,3 +198,9 @@ struct SignView: View {
         return "Database error saving new user"
     }
 }
+
+struct SignView_Previews: PreviewProvider {
+    static var previews: some View {
+        SignView(onSignedIn: { _ in })
+    }
+}
