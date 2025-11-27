@@ -16,8 +16,7 @@ struct JasmineApp: App {
     var body: some Scene {
         WindowGroup {
             ZStack {
-                SplashView()
-                
+ 
                 Group {
                     if userID != nil {
                         ContentView(onSignOut: {

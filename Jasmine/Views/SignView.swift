@@ -8,7 +8,10 @@
 import SwiftUI
 import Supabase
 
-enum AuthMode: String, CaseIterable { case signup = "Sign-up", login = "Log-in" }
+enum AuthMode: String, CaseIterable {
+    case signup = "Sign-up"
+    case login  = "Log-in"
+}
 
 struct SignView: View {
     // UI state
@@ -25,8 +28,11 @@ struct SignView: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            Text(mode == .signup ? "Create your Jasmine account" : "Welcome back to Jasmine")
-                .font(.title3).bold()
+            Text(mode == .signup
+                 ? "Create your Jasmine account"
+                 : "Welcome back to Jasmine")
+                .font(.title3)
+                .bold()
 
             Picker("", selection: $mode) {
                 Text("Sign-up").tag(AuthMode.signup)
@@ -39,30 +45,42 @@ struct SignView: View {
                     TextField("First name", text: $fname)
                         .textInputAutocapitalization(.words)
                         .autocorrectionDisabled()
-                        .padding().background(.ultraThinMaterial).cornerRadius(10)
+                        .padding()
+                        .background(.ultraThinMaterial)
+                        .cornerRadius(10)
 
                     TextField("Last name", text: $lname)
                         .textInputAutocapitalization(.words)
                         .autocorrectionDisabled()
-                        .padding().background(.ultraThinMaterial).cornerRadius(10)
+                        .padding()
+                        .background(.ultraThinMaterial)
+                        .cornerRadius(10)
 
                     HStack {
                         Text("Date of birth")
                         Spacer()
-                        DatePicker("", selection: $dob, displayedComponents: .date)
+                        DatePicker("",
+                                   selection: $dob,
+                                   displayedComponents: .date)
                             .labelsHidden()
                     }
-                    .padding().background(.ultraThinMaterial).cornerRadius(10)
+                    .padding()
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(10)
                 }
 
                 TextField("Email", text: $email)
                     .keyboardType(.emailAddress)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
-                    .padding().background(.ultraThinMaterial).cornerRadius(10)
+                    .padding()
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(10)
 
                 SecureField("Password", text: $password)
-                    .padding().background(.ultraThinMaterial).cornerRadius(10)
+                    .padding()
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(10)
             }
 
             if let error {
@@ -92,49 +110,69 @@ struct SignView: View {
             .disabled(isBusy || !canSubmit)
             .padding(.top, 8)
 
-            if isBusy { ProgressView().padding(.top, 6) }
+            if isBusy {
+                ProgressView()
+                    .padding(.top, 6)
+            }
         }
         .padding()
     }
 
+
     var canSubmit: Bool {
         switch mode {
         case .signup:
-            return !fname.isEmpty && !lname.isEmpty && !email.isEmpty && !password.isEmpty
+            return !fname.isEmpty &&
+                   !lname.isEmpty &&
+                   !email.isEmpty &&
+                   !password.isEmpty
         case .login:
             return !email.isEmpty && !password.isEmpty
         }
     }
 
+
     @MainActor
     private func handleSignUp() async {
-        error = nil; isBusy = true
+        error = nil
+        isBusy = true
         defer { isBusy = false }
+
         do {
-            // 1) إنشاء حساب
-            _ = try await Supa.client.auth.signUp(email: email, password: password)
+            // 1) إنشاء حساب في Auth
+            _ = try await Supa.client.auth.signUp(
+                email: email,
+                password: password
+            )
 
             // 2) الحصول على الجلسة
             guard let session = try? await Supa.client.auth.session else {
                 error = "Account created. Please verify your email, then sign in."
                 return
             }
+
             let uid = session.user.id.uuidString
 
+            // 3) تجهيز صف users
             struct NewUserRow: Encodable {
                 let userid: String
                 let fname: String
                 let lname: String
                 let email: String
-                let dob: String        // yyyy-MM-dd
+                let dob: String          // yyyy-MM-dd
                 let rewardpreference: Bool
+
+                enum CodingKeys: String, CodingKey {
+                    case userid, fname, lname, email, rewardpreference
+                    case dob = "date_of_birth"
+                }
             }
+
             let df = DateFormatter()
             df.calendar = Calendar(identifier: .gregorian)
-            df.locale = .init(identifier: "en_US_POSIX")
-            df.timeZone = .init(secondsFromGMT: 0)
+            df.locale = Locale(identifier: "en_US_POSIX")
+            df.timeZone = TimeZone(secondsFromGMT: 0)
             df.dateFormat = "yyyy-MM-dd"
-
 
             let row = NewUserRow(
                 userid: uid,
@@ -145,57 +183,59 @@ struct SignView: View {
                 rewardpreference: false
             )
 
-            try await Supa.client
-                .from("users")
-                .upsert(row, onConflict: "userid")
-                .execute()
+            // 4) إدخال الصف في جدول users
+            do {
+                try await Supa.client
+                    .from("users")
+                    .upsert(row, onConflict: "userid")
+                    .execute()
+            } catch {
+                // خطأ من قاعدة البيانات
+                print("🔴 DB upsert error:", error)
+                self.error = error.localizedDescription
+                return
+            }
 
             onSignedIn(uid)
+
         } catch {
-            self.error = prettify(error)
+            // خطأ من Auth
+            print("🔴 Auth error:", error)
+            self.error = error.localizedDescription
         }
     }
 
-    @MainActor
-       private func handleSignIn() async {
-           error = nil; isBusy = true
-           defer { isBusy = false }
-           do {
-               _ = try await Supa.client.auth.signIn(email: email, password: password)
-               let session = try await Supa.client.auth.session
-               onSignedIn(session.user.id.uuidString)
-           } catch {
-               let msg = error.localizedDescription.lowercased()
-
-               if msg.contains("invalid login") {
-                   self.error = "Account not found. Please sign up first."
-               } else {
-                   self.error = "Login failed. Please try again."
-               }
-           }
-       }
 
     @MainActor
-    private func forgotPassword() async {
-        error = nil; isBusy = true
+    private func handleSignIn() async {
+        error = nil
+        isBusy = true
         defer { isBusy = false }
+
         do {
-            try await Supa.client.auth.resetPasswordForEmail(email)
+            _ = try await Supa.client.auth.signIn(
+                email: email,
+                password: password
+            )
+            let session = try await Supa.client.auth.session
+            onSignedIn(session.user.id.uuidString)
         } catch {
             self.error = error.localizedDescription
         }
     }
 
-    private func prettify(_ error: Error) -> String {
-        let msg = error.localizedDescription
-        if msg.localizedCaseInsensitiveContains("duplicate key value violates unique constraint") {
-            return "This email is already registered."
+
+    @MainActor
+    private func forgotPassword() async {
+        error = nil
+        isBusy = true
+        defer { isBusy = false }
+
+        do {
+            try await Supa.client.auth.resetPasswordForEmail(email)
+        } catch {
+            self.error = error.localizedDescription
         }
-        if msg.localizedCaseInsensitiveContains("permission denied") ||
-            msg.localizedCaseInsensitiveContains("row-level security") {
-            return "Database policy blocked the insert. Check RLS for table users."
-        }
-        return "Database error saving new user"
     }
 }
 
@@ -204,3 +244,4 @@ struct SignView_Previews: PreviewProvider {
         SignView(onSignedIn: { _ in })
     }
 }
+
