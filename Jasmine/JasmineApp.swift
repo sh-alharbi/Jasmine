@@ -26,9 +26,8 @@ struct JasmineApp: App {
                             }
                         })
                     } else {
-                        SignView { uid in
-                            self.userID = uid
-                        }
+                     //   AuthContainerView(selectedMode: .login)
+                       WelcomeView()
                     }
                 }
             }
@@ -46,3 +45,4 @@ struct JasmineApp: App {
         }
     }
 }
+
