@@ -5,7 +5,6 @@
 //  Created by Shahad Alharbi on 11/27/25.
 //
 
-// RoutineRowView.swift
 import SwiftUI
 
 struct RoutineRowView: View {
@@ -23,7 +22,11 @@ struct RoutineRowView: View {
             Button(action: onToggleDone) {
                 Image(systemName: routine.isDone ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 24, weight: .semibold))
-                    .foregroundColor(routine.isDone ? .jasmineGreen : .gray.opacity(0.5))
+                    .foregroundColor(
+                        routine.isDone
+                        ? .jasmineGreen
+                        : .gray.opacity(0.5)
+                    )
             }
             .buttonStyle(.plain)
             

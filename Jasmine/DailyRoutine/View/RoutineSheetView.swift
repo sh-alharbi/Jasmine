@@ -5,7 +5,6 @@
 //  Created by Shahad Alharbi on 11/27/25.
 //
 
-// RoutineSheetView.swift
 import SwiftUI
 
 struct RoutineSheetView: View {
@@ -21,9 +20,13 @@ struct RoutineSheetView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("Product Name")) {
-                    TextField("Serum", text: $viewModel.productName)
-                }
+               
+                Section {
+                           LabeledContent("Product Name") {
+                               TextField("e.g. Serum", text: $viewModel.productName)
+                           }
+                       }
+
                 
                 Section {
                     Picker("Morning or night", selection: $viewModel.selectedType) {
