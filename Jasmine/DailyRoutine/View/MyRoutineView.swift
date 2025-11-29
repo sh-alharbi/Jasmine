@@ -15,23 +15,54 @@ struct MyRoutineView: View {
     @State private var showAddSheet = false
     @State private var editingRoutine: Routine? = nil
     @State private var showFullCalendar = false
+    @State private var showMonthPicker = false
+    
+    
+    private var today: Date {
+        Calendar.current.startOfDay(for: Date())
+    }
     
     private var todaysRoutines: [Routine] {
-        store.routines(for: selectedDate)
+        store.routines(for: today)
     }
     
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             VStack(alignment: .leading, spacing: 16) {
                 
-                Text("My Routine")
-                    .font(.title3.weight(.semibold))
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.top, 8)
+                
+                ZStack {
+                    Text("My Routine")
+                        .font(.title3.weight(.semibold))
+                        .frame(maxWidth: .infinity, alignment: .center)
+                    
+                    HStack {
+                        Spacer()
+                        Button {
+                            showFullCalendar = true
+                        } label: {
+                            ZStack {
+                                Circle()
+                                    .fill(.ultraThinMaterial)
+                                    .overlay(
+                                        Circle()
+                                            .stroke(Color.white.opacity(0.6), lineWidth: 0.8)
+                                    )
+                                    .frame(width: 50, height: 50)
+                                
+                                Image(systemName: "calendar")
+                                    .font(.system(size: 25, weight: .medium))
+                                    .foregroundColor(.black)
+                            }
+                        }
+                    }
+                    .padding(.trailing, 24)
+                }
+                .padding(.top, 8)
                 
                 headerSection
                 
-                Text("Routine")
+                Text("Routines for today")
                     .font(.headline)
                     .padding(.horizontal, 24)
                 
@@ -82,10 +113,13 @@ struct MyRoutineView: View {
             }
             .padding(24)
         }
+        .onAppear {
+            selectedDate = today
+        }
         .sheet(isPresented: $showAddSheet) {
             RoutineSheetView(
                 viewModel: RoutineFormViewModel(),
-                selectedDate: selectedDate,
+                selectedDate: today,
                 onSaved: { _ in },
                 onDelete: nil
             )
@@ -94,7 +128,7 @@ struct MyRoutineView: View {
         .sheet(item: $editingRoutine) { item in
             RoutineSheetView(
                 viewModel: RoutineFormViewModel(existing: item),
-                selectedDate: selectedDate,
+                selectedDate: today,
                 onSaved: { updated in
                     store.update(updated)
                 },
@@ -108,6 +142,12 @@ struct MyRoutineView: View {
             FullRoutineCalendarView(selectedDate: $selectedDate)
                 .environmentObject(store)
         }
+        .sheet(isPresented: $showMonthPicker) {
+            MonthPickerView(selectedDate: $selectedDate)
+                .presentationDetents([.fraction(0.35)])
+                .presentationDragIndicator(.visible)
+        }
+
     }
     
     
@@ -116,9 +156,9 @@ struct MyRoutineView: View {
             
             HStack(spacing: 8) {
                 Text(monthYearString(for: monthDate))
-                    .font(.headline)
+                    .font(.system(size: 20, weight: .bold))
                     .onTapGesture {
-                        showFullCalendar = true
+                        showMonthPicker = true
                     }
                 
                 HStack(spacing: 4) {
@@ -126,7 +166,7 @@ struct MyRoutineView: View {
                         changeMonth(by: -1)
                     } label: {
                         Image(systemName: "chevron.left")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.system(size: 20, weight: .semibold))
                             .foregroundColor(.black)
                     }
                     
@@ -134,7 +174,7 @@ struct MyRoutineView: View {
                         changeMonth(by: 1)
                     } label: {
                         Image(systemName: "chevron.right")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.system(size: 20, weight: .semibold))
                             .foregroundColor(.black)
                     }
                 }
@@ -144,53 +184,68 @@ struct MyRoutineView: View {
                 Text("\(store.totalPoints) points")
                     .font(.subheadline.weight(.semibold))
                     .foregroundColor(.black)
-                    .padding(.vertical, 6)
-                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 20)
                     .background(
                         Capsule()
                             .fill(Color.jasmineGreen)
                             .shadow(color: Color.jasmineGreen.opacity(0.25),
-                                    radius: 6, x: 0, y: 3)
+                                    radius: 8, x: 0, y: 4)
                     )
             }
             
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(daysInMonth, id: \.self) { day in
-                        let isSelected = Calendar.current.isDate(day, inSameDayAs: selectedDate)
-                        let completed = store.isDayCompleted(day)
-                        
-                        VStack(spacing: 4) {
-                            Text(weekdayShort(for: day))
-                                .font(.caption2)
+            
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(daysInMonth, id: \.self) { day in
+                            let calendar = Calendar.current
+                            let startOfDay = calendar.startOfDay(for: day)
+                            let isToday = calendar.isDate(startOfDay, inSameDayAs: today)
+                            let completed = store.isDayCompleted(day)
                             
-                            Text(dayNumberString(for: day))
-                                .font(.footnote)
-                                .fontWeight(.semibold)
+                          
+                            let backgroundColor: Color = {
+                                if completed {
+                                    return Color(red: 1.0, green: 0.98, blue: 0.85)
+                                } else if isToday {
+                                    return Color.jasmineGreen
+                                } else {
+                                    return .white
+                                }
+                            }()
+                            
+                            VStack(spacing: 4) {
+                                Text(weekdayShort(for: day))
+                                    .font(.caption2)
+                                
+                                Text(dayNumberString(for: day))
+                                    .font(.footnote)
+                                    .fontWeight(.semibold)
+                            }
+                            .frame(width: 44, height: 44)
+                            .background(
+                                Circle()
+                                    .fill(backgroundColor)
+                            )
+                            .foregroundColor(
+                                (isToday && !completed) ? .white : .black
+                            )
+                            
+                            .id(startOfDay)
                         }
-                        .frame(width: 44, height: 44)
-                        .background(
-                            Circle()
-                                .fill(isSelected ? Color.jasmineGreen : Color.white)
-                                .overlay(
-                                    Circle().stroke(
-                                        completed || isSelected
-                                        ? Color.jasmineGreen
-                                        : Color.jasmineGreen.opacity(0.7),
-                                        lineWidth: completed ? 2.5 : 1.5
-                                    )
-                                )
-                        )
-                        .foregroundColor(isSelected ? .white : .black) // أسود لما مو محدد
-                        .onTapGesture {
-                            selectedDate = day
-                        }
+                    }
+                }
+                .onAppear {
+                    
+                    DispatchQueue.main.async {
+                        proxy.scrollTo(today, anchor: .center)
                     }
                 }
             }
         }
-        .padding(.vertical, 26)   // كان 22
-        .padding(.horizontal, 24) // كان 22
+        .padding(.vertical, 32)
+        .padding(.horizontal, 30)
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
@@ -204,7 +259,6 @@ struct MyRoutineView: View {
         .padding(.horizontal, 12)
         .padding(.top, 8)
     }
-    
     
     
     private var monthDate: Date {
@@ -227,13 +281,9 @@ struct MyRoutineView: View {
     private func changeMonth(by value: Int) {
         let calendar = Calendar.current
         if let newDate = calendar.date(byAdding: .month, value: value, to: monthDate) {
-            if let day = calendar.dateComponents([.day], from: selectedDate).day {
-                var comps = calendar.dateComponents([.year, .month], from: newDate)
-                comps.day = min(day, calendar.range(of: .day, in: .month, for: newDate)?.count ?? day)
-                selectedDate = calendar.date(from: comps) ?? newDate
-            } else {
-                selectedDate = newDate
-            }
+            var comps = calendar.dateComponents([.year, .month], from: newDate)
+            comps.day = 1
+            selectedDate = calendar.date(from: comps) ?? newDate
         }
     }
     
@@ -265,6 +315,10 @@ struct FullRoutineCalendarView: View {
     
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 7)
     
+    private var today: Date {
+        Calendar.current.startOfDay(for: Date())
+    }
+    
     var body: some View {
         NavigationView {
             ScrollView {
@@ -291,7 +345,6 @@ struct FullRoutineCalendarView: View {
             }
         }
     }
-    
     
     private func monthSection(for monthStart: Date) -> some View {
         let monthName = monthTitle(for: monthStart)
@@ -327,8 +380,19 @@ struct FullRoutineCalendarView: View {
     
     private func dayCell(for day: Date) -> some View {
         let calendar = Calendar.current
-        let isSelected = calendar.isDate(day, inSameDayAs: selectedDate)
+        let startOfDay = calendar.startOfDay(for: day)
+        let isToday = calendar.isDate(startOfDay, inSameDayAs: today)
         let completed = store.isDayCompleted(day)
+        
+        let backgroundColor: Color = {
+            if completed {
+                return Color(red: 1.0, green: 0.98, blue: 0.85)
+            } else if isToday {
+                return Color.jasmineGreen
+            } else {
+                return .clear
+            }
+        }()
         
         return VStack {
             Text(dayNumberString(for: day))
@@ -337,22 +401,10 @@ struct FullRoutineCalendarView: View {
                 .frame(width: 44, height: 44)
                 .background(
                     Circle()
-                        .fill(isSelected ? Color.jasmineGreen : Color.clear)
-                        .overlay(
-                            Circle().stroke(
-                                completed || isSelected
-                                ? Color.jasmineGreen
-                                : Color.jasmineGreen.opacity(0.7),
-                                lineWidth: completed ? 2.2 : 1.3
-                            )
-                        )
+                        .fill(backgroundColor)
                 )
-                .foregroundColor(isSelected ? .white : .black)
+                .foregroundColor(isToday && !completed ? .white : .black)
                 .contentShape(Circle())
-        }
-        .onTapGesture {
-            selectedDate = day
-            dismiss()
         }
     }
     
@@ -406,6 +458,52 @@ struct FullRoutineCalendarView: View {
         return formatter.shortWeekdaySymbols.map { $0.uppercased() }
     }
 }
+
+
+struct MonthPickerView: View {
+    @Binding var selectedDate: Date
+    @Environment(\.dismiss) private var dismiss
+    
+    @State private var tempDate: Date
+    
+    init(selectedDate: Binding<Date>) {
+        _selectedDate = selectedDate
+        _tempDate = State(initialValue: selectedDate.wrappedValue)
+    }
+    
+    var body: some View {
+        NavigationView {
+            VStack {
+                DatePicker(
+                    "",
+                    selection: $tempDate,
+                    displayedComponents: [.date]
+                )
+                .datePickerStyle(.wheel)
+                .labelsHidden()
+                .frame(maxHeight: 300)
+                
+                Spacer()
+            }
+            .padding()
+            .navigationTitle("Select date")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+              
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        let calendar = Calendar.current
+                        var comps = calendar.dateComponents([.year, .month], from: tempDate)
+                        comps.day = 1
+                        selectedDate = calendar.date(from: comps) ?? tempDate
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 #Preview {
     MyRoutineView()
