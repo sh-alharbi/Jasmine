@@ -4,64 +4,13 @@
 //
 //  Created by lamess on 07/06/1447 AH.
 //
-//import SwiftUI
-//
-//struct LoginView: View {
-//    @StateObject var viewModel = LoginViewModel()
-//    @State private var showSignup = false
-//
-//    var body: some View {
-//        VStack(spacing: 20) {
-//
-//            Text("Welcome back to Jasmine")
-//                .font(.title3)
-//                .bold()
-//
-//            TextField("Email", text: $viewModel.email)
-//                .keyboardType(.emailAddress)
-//                .padding()
-//                .background(.ultraThinMaterial)
-//                .cornerRadius(10)
-//
-//            SecureField("Password", text: $viewModel.password)
-//                .padding()
-//                .background(.ultraThinMaterial)
-//                .cornerRadius(10)
-//
-//            if let error = viewModel.error {
-//                Text(error)
-//                    .foregroundColor(.red)
-//                    .font(.footnote)
-//            }
-//
-//            Button("Sign in") {
-//                Task { await viewModel.login() }
-//            }
-//            .buttonStyle(.borderedProminent)
-//            .disabled(!viewModel.canSubmit || viewModel.isBusy)
-//
-//            if viewModel.isBusy {
-//                ProgressView()
-//            }
-//
-//            // رابط الذهاب لصفحة التسجيل
-//            Button("Don't have an account? Sign up") {
-//                showSignup = true
-//            }
-//            .font(.footnote)
-//            .padding(.top, 8)
-//        }
-//        .padding()
-//        .fullScreenCover(isPresented: $showSignup) {
-//            SignUpView()
-//        }
-//    }
-//}
+
 import SwiftUI
 
 struct LoginView: View {
     @StateObject var viewModel = LoginViewModel()
     @State private var showSignup = false
+    var action1: () -> Void = { }
 
     var body: some View {
         ZStack {
@@ -98,7 +47,7 @@ struct LoginView: View {
                         .font(.footnote)
                         .foregroundColor(.gray)
 
-                    TextField("", text: $viewModel.email)
+                    TextField("UserEmail@Gmail. com", text: $viewModel.email)
                         .padding()
                         .background(.white.opacity(0.9))
                         .cornerRadius(12)
@@ -142,6 +91,17 @@ struct LoginView: View {
                 }
                 .disabled(!viewModel.canSubmit || viewModel.isBusy)
 
+                Button(action: action1){
+                    Text("Continue as a guest")
+                        .foregroundColor(.black) // أخضر
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 28)
+                                .stroke(Color(red: 153/255, green: 188/255, blue: 148/255), lineWidth: 2)
+                        )
+                }.glassEffect()
+                
                 if viewModel.isBusy {
                     ProgressView().padding(.top, 4)
                 }
