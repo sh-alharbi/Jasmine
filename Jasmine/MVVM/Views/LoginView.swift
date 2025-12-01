@@ -134,14 +134,13 @@ struct LoginView: View {
             SignUpView()
         }
         .fullScreenCover(isPresented: $isLoggedIn) {
-            ContentView(onSignOut: {
-                isLoggedIn = false
-            })
-        }
+                    ActivityView() // ← بدل ContentView
+                    
+                }
     }
 }
-
 #Preview {
     LoginView()
+        .environmentObject(SessionStore())
+        .environmentObject(RoutineStore())
 }
-
