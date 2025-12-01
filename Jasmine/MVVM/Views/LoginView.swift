@@ -10,6 +10,7 @@ import SwiftUI
 struct LoginView: View {
     @StateObject var viewModel = LoginViewModel()
     @State private var showSignup = false
+    @State private var isLoggedIn = false
     var action1: () -> Void = { }
 
     var body: some View {
@@ -53,7 +54,8 @@ struct LoginView: View {
                         .cornerRadius(12)
                         .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
                         .autocorrectionDisabled(true)
-                        .textInputAutocapitalization(.never).glassEffect(.clear)
+                        .textInputAutocapitalization(.never)
+                        .glassEffect(.clear)
                 }
 
                 // Password Field
@@ -66,7 +68,8 @@ struct LoginView: View {
                         .padding()
                         .background(.white.opacity(0.9))
                         .cornerRadius(12)
-                        .shadow(color: .black.opacity(0.08), radius: 4, y: 2).glassEffect(.clear)
+                        .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
+                        .glassEffect(.clear)
                 }
 
                 if let error = viewModel.error {
@@ -78,7 +81,12 @@ struct LoginView: View {
 
                 // Login Button
                 Button {
-                    Task { await viewModel.login() }
+                    Task {
+                        let success = await viewModel.login()
+                        if success {
+                            isLoggedIn = true
+                        }
+                    }
                 } label: {
                     Text("Login")
                         .frame(maxWidth: .infinity)
@@ -100,7 +108,8 @@ struct LoginView: View {
                             RoundedRectangle(cornerRadius: 28)
                                 .stroke(Color(red: 153/255, green: 188/255, blue: 148/255), lineWidth: 2)
                         )
-                }.glassEffect()
+                }
+                .glassEffect()
                 
                 if viewModel.isBusy {
                     ProgressView().padding(.top, 4)
@@ -124,9 +133,14 @@ struct LoginView: View {
         .fullScreenCover(isPresented: $showSignup) {
             SignUpView()
         }
+        .fullScreenCover(isPresented: $isLoggedIn) {
+                    ActivityView() // ← بدل ContentView
+                    
+                }
     }
 }
-
 #Preview {
     LoginView()
+        .environmentObject(SessionStore())
+        .environmentObject(RoutineStore())
 }

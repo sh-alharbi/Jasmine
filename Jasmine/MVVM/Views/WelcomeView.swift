@@ -1,9 +1,9 @@
-//
-//  WelcomeView.swift
-//  Jasmine
-//
-//  Created by lamess on 01/06/1447 AH.
-//
+////
+////  WelcomeView.swift
+////  Jasmine
+////
+////  Created by lamess on 01/06/1447 AH.
+////
 
 import SwiftUI
 
@@ -90,4 +90,6 @@ struct WelcomeView: View {
 
 #Preview {
     WelcomeView()
+        .environmentObject(SessionStore())
+        .environmentObject(RoutineStore())
 }

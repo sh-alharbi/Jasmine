@@ -49,5 +49,7 @@ struct SplashView: View {
 }
 
 #Preview {
-    SplashView()
+  SplashView()
+        .environmentObject(SessionStore())
+        .environmentObject(RoutineStore())   // ← أهم شيء
 }

@@ -147,7 +147,7 @@ struct MyRoutineView: View {
                 .presentationDetents([.fraction(0.35)])
                 .presentationDragIndicator(.visible)
         }
-
+        
     }
     
     
@@ -204,7 +204,7 @@ struct MyRoutineView: View {
                             let isToday = calendar.isDate(startOfDay, inSameDayAs: today)
                             let completed = store.isDayCompleted(day)
                             
-                          
+                            
                             let backgroundColor: Color = {
                                 if completed {
                                     return Color(red: 1.0, green: 0.98, blue: 0.85)
@@ -489,7 +489,7 @@ struct MonthPickerView: View {
             .navigationTitle("Select date")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-              
+                
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
                         let calendar = Calendar.current

@@ -26,7 +26,8 @@ struct ContentView: View {
     @State private var saveToHistory = false
     @State private var isSaving = false
     @State private var infoMsg: String? = nil
-    
+    @State private var goToActivity = false
+
     let onSignOut: () async -> Void
 
     var body: some View {
@@ -188,13 +189,22 @@ struct ContentView: View {
                             .padding(.top, 6)
                         
                         HStack(spacing: 12) {
+//                            Button("Finish") {
+//                                Task { await SaveToHistory() }
+//                            }
+//                            .buttonStyle(.borderedProminent)
+//                            .tint(.green)
+//                            .disabled(isSaving)
                             Button("Finish") {
-                                Task { await SaveToHistory() }
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(.green)
-                            .disabled(isSaving)
-                            
+                                Task {
+                                    await SaveToHistory()
+                                    
+                                    await MainActor.run {
+                                        goToActivity = true
+                                    }
+                                }}.buttonStyle(.borderedProminent)
+                                    .tint(.green)
+                                
                             Button("Start New Analysis") {
                                 step = 1
                                 result = nil
@@ -213,11 +223,10 @@ struct ContentView: View {
             }
             .padding()
             .navigationTitle("Jasmine")
-            .toolbar {
-                Button("Sign out") {
-                    Task { await onSignOut() }
-                }
+            .navigationDestination(isPresented: $goToActivity) {
+                ActivityView()
             }
+
         }
     }
 
