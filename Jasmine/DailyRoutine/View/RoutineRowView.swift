@@ -1,4 +1,3 @@
-//
 //  RoutineRowView.swift
 //  Jasmine
 //
@@ -36,25 +35,37 @@ struct RoutineRowView: View {
                     .fontWeight(.medium)
                 
                 HStack(spacing: 8) {
-                    Text("\(routine.type.emoji) \(routine.type.displayTypeOfRoutine)")
-                        .font(.caption)
-                        .padding(.vertical, 4)
-                        .padding(.horizontal, 8)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(routine.type == .morning
-                                      ? Color.yellow.opacity(0.2)
-                                      : Color.blue.opacity(0.2))
-                        )
-                    
-                    Text(timeString)
-                        .font(.caption)
-                        .padding(.vertical, 4)
-                        .padding(.horizontal, 8)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.gray.opacity(0.15))
-                        )
+                    HStack(spacing: 6) {
+                        Image(systemName: routine.type.iconName)
+                            .font(.system(size: 13))
+                            .foregroundColor(routine.type.color)
+                        
+                        Text(routine.type.displayTypeOfRoutine)
+                            .font(.caption)
+                            .foregroundColor(.primary)
+                    }
+                    .padding(.vertical, 4)
+                    .padding(.horizontal, 10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(routine.type.backgroundColor)   
+                    )
+                    HStack(spacing: 6) {
+                        Image(systemName: "clock.fill")
+                            .font(.system(size: 12))
+                            .foregroundColor(.gray)
+
+                        Text(timeString)
+                            .font(.caption)
+                            .foregroundColor(.primary)
+                    }
+                    .padding(.vertical, 4)
+                    .padding(.horizontal, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.gray.opacity(0.15))
+                    )
+
                 }
             }
             

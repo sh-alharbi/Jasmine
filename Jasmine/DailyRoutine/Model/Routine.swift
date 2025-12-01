@@ -5,6 +5,7 @@
 //  Created by Shahad Alharbi on 11/26/25.
 //
 import Foundation
+import SwiftUI
 
 
 struct Routine: Identifiable, Codable{
@@ -49,16 +50,34 @@ enum RoutineType : String, Codable , CaseIterable , Identifiable{
             return "Night"
         }
     }
-    var emoji: String{
+    
+}
+extension RoutineType {
+    var iconName: String {
         switch self {
-        case .morning:
-            return "☀️"
-        case .night:
-            return "🌙"
+        case .morning: return "sun.max.fill"
+        case .night:   return "moon.fill"
         }
     }
     
+    var color: Color {
+        switch self {
+        case .morning: return Color.yellow.opacity(0.9)
+        case .night:   return Color.blue.opacity(0.8)
+        }
+    }
+    
+    var backgroundColor: Color {
+        switch self {
+        case .morning:
+            return Color.yellow.opacity(0.20)
+        case .night:
+            return Color.blue.opacity(0.20)
+        }
+    }
 }
+
+
 
 
 

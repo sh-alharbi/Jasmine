@@ -1,9 +1,3 @@
-//
-//  SkinAPIService.swift.swift
-//  Jasmine
-//
-//  Created by Shahad Alharbi on 10/26/25.
-//
 import Foundation
 import UIKit
 

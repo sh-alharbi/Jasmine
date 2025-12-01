@@ -87,6 +87,8 @@ struct MyRoutineView: View {
                                 }
                             }
                         }
+                        Spacer()
+                                .frame(height: 10)
                         .padding(.top, 8)
                     }
                 }
@@ -508,4 +510,4 @@ struct MonthPickerView: View {
 #Preview {
     MyRoutineView()
         .environmentObject(RoutineStore())
-}
+} 

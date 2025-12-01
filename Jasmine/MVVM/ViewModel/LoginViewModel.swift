@@ -19,7 +19,7 @@ final class LoginViewModel: ObservableObject {
         !email.isEmpty && !password.isEmpty
     }
 
-    func login() async {
+    func login() async -> Bool {
         error = nil
         isBusy = true
         defer { isBusy = false }
@@ -29,8 +29,10 @@ final class LoginViewModel: ObservableObject {
                 email: email,
                 password: password
             )
+            return true
         } catch {
             self.error = error.localizedDescription
+            return false
         }
     }
 
