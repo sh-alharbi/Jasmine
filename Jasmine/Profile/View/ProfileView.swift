@@ -24,13 +24,14 @@ struct ProfileView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 
+                // MARK: - Header
                 ZStack(alignment: .top) {
+                    // الخلفية تغطي أعلى الشاشة
                     headerColor
-                        .frame(height: 195)
-                        .edgesIgnoringSafeArea(.top)
+                        .ignoresSafeArea(edges: .top)
                     
                     VStack(spacing: 14) {
-                        
+                        // Title + buttons
                         HStack {
                             Text("Profile")
                                 .font(.system(size: 24, weight: .bold))
@@ -50,9 +51,9 @@ struct ProfileView: View {
                                 topButton(icon: "house.fill")
                             }
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.top, 10)
+                        .padding(10)   // نفس الـ padding في ActivityView
                         
+                        // Avatar + name
                         VStack(spacing: 6) {
                             Image(systemName: "person.crop.circle")
                                 .font(.system(size: 70))
@@ -63,10 +64,12 @@ struct ProfileView: View {
                         }
                         .frame(maxWidth: .infinity)
                     }
-                    .padding(.top, 10)
+                    // نرفع كل الهيدر فوق عشان يطابق التصميم
+                    .padding(.top, -28)
                 }
                 .frame(height: 195)
                 
+                // MARK: - Content
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 22) {
                         
@@ -112,21 +115,18 @@ struct ProfileView: View {
         }
     }
     
+    // MARK: - Components
     
+    // نفس تصميم زر الهيدر في ActivityView بالضبط
     func topButton(icon: String) -> some View {
-        ZStack {
-            Circle()
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    Circle()
-                        .stroke(Color.white.opacity(0.6), lineWidth: 0.8)
-                )
-                .shadow(color: Color.black.opacity(0.12), radius: 6, x: 0, y: 3)
-            
-            Image(systemName: icon)
-                .font(.system(size: 25, weight: .medium))                .foregroundColor(.black)
-        }
-        .frame(width: 50, height: 50)
+        Image(systemName: icon)
+            .font(.system(size: 18))
+            .foregroundColor(.black)
+            .frame(width: 38, height: 38)
+            .background(Color.white)
+            .clipShape(Circle())
+            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+            .padding(.trailing, 4)
     }
     
     func personalInfoCard(name: String, email: String) -> some View {
@@ -269,7 +269,7 @@ struct ProfileView: View {
                 Image(systemName: icon)
                     .foregroundColor(
                         isStar
-                        ? Color(red: 255/255, green: 204/255, blue: 0/255) // ذهبي
+                        ? Color(red: 255/255, green: 204/255, blue: 0/255)
                         : .black.opacity(0.7)
                     )
                     .font(.system(size: 18))
@@ -343,7 +343,7 @@ struct ProfileView: View {
                             vm.fullName = newName
                             dismiss()
                         }
-                        .foregroundColor(saveButtonColor)
+                        .foregroundColor(.black)
                         .disabled(newName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     }
                 }
@@ -357,4 +357,3 @@ struct ProfileView: View {
         .environmentObject(SessionStore())
         .environmentObject(RoutineStore())
 }
-    
