@@ -32,12 +32,12 @@ struct ActivityView: View {
                                 topButton(icon: "list.bullet")
                             }
 
-                            Button {
-                                // TODO: Navigate to AccountView later
-                                print("Profile tapped")
+                            NavigationLink {
+                                ProfileView()
                             } label: {
                                 topButton(icon: "person.crop.circle")
                             }
+
                            
                         }.padding(10)
 

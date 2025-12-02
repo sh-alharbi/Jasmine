@@ -48,7 +48,7 @@ struct RoutineRowView: View {
                     .padding(.horizontal, 10)
                     .background(
                         RoundedRectangle(cornerRadius: 10)
-                            .fill(routine.type.backgroundColor)   
+                            .fill(routine.type.backgroundColor)
                     )
                     HStack(spacing: 6) {
                         Image(systemName: "clock.fill")

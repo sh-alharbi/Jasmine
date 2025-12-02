@@ -1,4 +1,3 @@
-//
 //  MyRoutineView.swift
 //  Jasmine
 //
@@ -510,4 +509,4 @@ struct MonthPickerView: View {
 #Preview {
     MyRoutineView()
         .environmentObject(RoutineStore())
-} 
+}
