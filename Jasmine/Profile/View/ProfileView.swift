@@ -20,13 +20,10 @@ struct ProfileView: View {
                 
                 ZStack(alignment: .top) {
                     Color.lightJasmine
-                        .frame(height: 220)
+                        .frame(height: 240)
                         .edgesIgnoringSafeArea(.top)
                     
                     VStack(spacing: 12) {
-                        
-                       
-                        
                         VStack(spacing: 6) {
                             Image(systemName: "person.crop.circle")
                                 .font(.system(size: 70))
@@ -40,62 +37,61 @@ struct ProfileView: View {
                     }
                 }
                 
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 24) {
-                        
-                        Text("personal information")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.black.opacity(0.6))
-                            .padding(.horizontal)
-                        
-                        infoCard {
-                            Button { showingEditNameSheet = true } label: {
-                                editableRow(
-                                    icon: "person.fill",
-                                    title: "Name",
-                                    value: vm.fullName.isEmpty ? "-" : vm.fullName
-                                )
-                            }
-                            .buttonStyle(.plain)
-                            
-                            divider
-                            
-                            row(
-                                icon: "envelope.fill",
-                                title: "Email",
-                                value: vm.email.isEmpty ? "-" : vm.email
+                VStack(alignment: .leading, spacing: 24) {
+                    
+                    Text("personal information")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.black.opacity(0.6))
+                        .padding(.horizontal)
+                    
+                    infoCard {
+                        Button { showingEditNameSheet = true } label: {
+                            editableRow(
+                                icon: "person.fill",
+                                title: "Name",
+                                value: vm.fullName.isEmpty ? "-" : vm.fullName
                             )
                         }
+                        .buttonStyle(.plain)
                         
-                        Text("preferences")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.black.opacity(0.6))
-                            .padding(.horizontal)
+                        divider
                         
-                        infoCard {
-                            prefRow(
-                                icon: "star.fill",
-                                title: "Motivational Rewards",
-                                isOn: $routineStore.isRewardEnabled,
-                                isStar: true
-                            )
-                            
-                            divider
-                            
-                            prefRow(
-                                icon: "bell.fill",
-                                title: "Push Notifications",
-                                isOn: $vm.notificationsEnabled,
-                                isStar: false
-                            )
-                        }
-                        .onChange(of: vm.notificationsEnabled) { newValue in
-                            if newValue { vm.requestNotificationPermission() }
-                        }
-                        
+                        row(
+                            icon: "envelope.fill",
+                            title: "Email",
+                            value: vm.email.isEmpty ? "-" : vm.email
+                        )
                     }
-                    .padding(.top, 18)
+                    
+                    Text("preferences")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.black.opacity(0.6))
+                        .padding(.horizontal)
+                    
+                    infoCard {
+                        prefRow(
+                            icon: "star.fill",
+                            title: "Motivational Rewards",
+                            isOn: $routineStore.isRewardEnabled,
+                            isStar: true
+                        )
+                        
+                        divider
+                        
+                        prefRow(
+                            icon: "bell.fill",
+                            title: "Push Notifications",
+                            isOn: $vm.notificationsEnabled,
+                            isStar: false
+                        )
+                    }
+                    .onChange(of: vm.notificationsEnabled) { newValue in
+                        if newValue { vm.requestNotificationPermission() }
+                    }
+                    
+                    Spacer(minLength: 20)
                 }
+                .padding(.top, -40)
             }
             .background(Color.white.ignoresSafeArea())
             .sheet(isPresented: $showingEditNameSheet) {

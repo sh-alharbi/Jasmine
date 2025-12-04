@@ -1,14 +1,15 @@
-//  MyRoutineView.swift
-//  Jasmine
 //
-//  Created by Shahad Alharbi on 11/26/25.
+//  MyRoutineView.swift
+//  Jasmine
+//
+//  Created by Shahad Alharbi on 11/26/25.
 //
 
 import SwiftUI
 
-
 struct MyRoutineView: View {
     @EnvironmentObject var store: RoutineStore
+    @EnvironmentObject var session: SessionStore
     
     @State private var selectedDate: Date = Date()
     @State private var showAddSheet = false
@@ -16,6 +17,12 @@ struct MyRoutineView: View {
     @State private var showFullCalendar = false
     @State private var showMonthPicker = false
     
+    @State private var showPointsAlert = false
+    @State private var goToProfile = false
+    
+  
+    @AppStorage("pointsActivationAlertCount")
+    private var pointsActivationAlertCount: Int = 0
     
     private var today: Date {
         Calendar.current.startOfDay(for: Date())
@@ -27,16 +34,15 @@ struct MyRoutineView: View {
     
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
+            
             VStack(alignment: .leading, spacing: 16) {
-                
                 
                 ZStack {
                     HStack {
-
-                    Text("My Routine")
-                        .font(.title3.weight(.semibold))
-                        .frame(maxWidth: .infinity, alignment: .center)
-                    
+                        Text("My Routine")
+                            .font(.title3.weight(.semibold))
+                            .frame(maxWidth: .infinity, alignment: .center)
+                        
                         Button {
                             showFullCalendar = true
                         } label: {
@@ -46,10 +52,10 @@ struct MyRoutineView: View {
                                 .frame(width: 38, height: 38)
                                 .background(Color.white)
                                 .clipShape(Circle())
-                                .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                                .shadow(color: .black.opacity(0.1),
+                                        radius: 4, x: 0, y: 2)
                                 .padding(.trailing, 4)
                         }
-
                     }
                     .padding(.trailing, 24)
                 }
@@ -82,9 +88,10 @@ struct MyRoutineView: View {
                                 }
                             }
                         }
+                        
                         Spacer()
-                                .frame(height: 10)
-                        .padding(.top, 8)
+                            .frame(height: 10)
+                            .padding(.top, 8)
                     }
                 }
                 
@@ -106,12 +113,28 @@ struct MyRoutineView: View {
                         .foregroundColor(.white)
                         .font(.system(size: 28, weight: .bold))
                 }
-                .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
+                .shadow(color: Color.black.opacity(0.15),
+                        radius: 8, x: 0, y: 4)
             }
             .padding(24)
+            
+            NavigationLink(
+                destination: ProfileView(),
+                isActive: $goToProfile
+            ) {
+                EmptyView()
+            }
+            .hidden()
         }
         .onAppear {
             selectedDate = today
+            
+            pointsActivationAlertCount = 0
+            if session.userID != nil,
+               !store.isRewardEnabled,
+               pointsActivationAlertCount < 2 {
+                showPointsAlert = true
+            }
         }
         .sheet(isPresented: $showAddSheet) {
             RoutineSheetView(
@@ -144,8 +167,78 @@ struct MyRoutineView: View {
                 .presentationDetents([.fraction(0.35)])
                 .presentationDragIndicator(.visible)
         }
-        
+        .overlay(
+            Group {
+                if showPointsAlert {
+                    ZStack {
+                        Color.black.opacity(0.25)
+                            .ignoresSafeArea()
+                        
+                        pointsActivationAlert
+                    }
+                }
+            }
+        )
     }
+    
+    private var pointsActivationAlert: some View {
+        VStack(spacing: 16) {
+            Text("Enjoy Extra Motivation ✨")
+                .font(.headline)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            Text("Want a small boost while completing your routines? You can turn on motivational rewards from your profile whenever you’re ready.")
+                .font(.subheadline)
+                .foregroundColor(.black.opacity(0.6))
+                .multilineTextAlignment(.leading)
+            
+            HStack(spacing: 12) {
+                Button {
+                    pointsActivationAlertCount += 1
+                    withAnimation {
+                        showPointsAlert = false
+                    }
+                } label: {
+                    Text("Skip")
+                        .font(.system(size: 15, weight: .medium))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(Color.white)
+                        )
+                }
+                
+                Button {
+                    pointsActivationAlertCount += 1
+                    withAnimation {
+                        showPointsAlert = false
+                    }
+                    goToProfile = true
+                } label: {
+                    Text("Profile")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(Color.blue)
+                        )
+                }
+            }
+        }
+        .padding(20)
+        .background(
+            
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .shadow(color: Color.black.opacity(0.20),
+                        radius: 18, x: 0, y: 10)
+        )
+        .padding(.horizontal, 32)
+    }
+    
     
     
     private var headerSection: some View {
@@ -201,7 +294,6 @@ struct MyRoutineView: View {
                             let isToday = calendar.isDate(startOfDay, inSameDayAs: today)
                             let completed = store.isDayCompleted(day)
                             
-                            
                             let backgroundColor: Color = {
                                 if completed {
                                     return Color(red: 1.0, green: 0.98, blue: 0.85)
@@ -228,13 +320,11 @@ struct MyRoutineView: View {
                             .foregroundColor(
                                 (isToday && !completed) ? .white : .black
                             )
-                            
                             .id(startOfDay)
                         }
                     }
                 }
                 .onAppear {
-                    
                     DispatchQueue.main.async {
                         proxy.scrollTo(today, anchor: .center)
                     }
@@ -251,12 +341,12 @@ struct MyRoutineView: View {
                     RoundedRectangle(cornerRadius: 24, style: .continuous)
                         .stroke(Color.white.opacity(0.6), lineWidth: 0.8)
                 )
-                .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 6)
+                .shadow(color: Color.black.opacity(0.08),
+                        radius: 12, x: 0, y: 6)
         )
         .padding(.horizontal, 12)
         .padding(.top, 8)
     }
-    
     
     private var monthDate: Date {
         let calendar = Calendar.current
@@ -302,7 +392,6 @@ struct MyRoutineView: View {
         return formatter.string(from: date)
     }
 }
-
 
 struct FullRoutineCalendarView: View {
     @EnvironmentObject var store: RoutineStore
@@ -486,7 +575,6 @@ struct MonthPickerView: View {
             .navigationTitle("Select date")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
                         let calendar = Calendar.current
@@ -505,4 +593,5 @@ struct MonthPickerView: View {
 #Preview {
     MyRoutineView()
         .environmentObject(RoutineStore())
+        .environmentObject(SessionStore())
 }
