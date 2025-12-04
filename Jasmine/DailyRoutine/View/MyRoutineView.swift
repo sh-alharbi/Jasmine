@@ -31,29 +31,25 @@ struct MyRoutineView: View {
                 
                 
                 ZStack {
+                    HStack {
+
                     Text("My Routine")
                         .font(.title3.weight(.semibold))
                         .frame(maxWidth: .infinity, alignment: .center)
                     
-                    HStack {
-                        Spacer()
                         Button {
                             showFullCalendar = true
                         } label: {
-                            ZStack {
-                                Circle()
-                                    .fill(.ultraThinMaterial)
-                                    .overlay(
-                                        Circle()
-                                            .stroke(Color.white.opacity(0.6), lineWidth: 0.8)
-                                    )
-                                    .frame(width: 50, height: 50)
-                                
-                                Image(systemName: "calendar")
-                                    .font(.system(size: 25, weight: .medium))
-                                    .foregroundColor(.black)
-                            }
+                            Image(systemName: "calendar")
+                                .font(.system(size: 18))
+                                .foregroundColor(.black)
+                                .frame(width: 38, height: 38)
+                                .background(Color.white)
+                                .clipShape(Circle())
+                                .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                                .padding(.trailing, 4)
                         }
+
                     }
                     .padding(.trailing, 24)
                 }

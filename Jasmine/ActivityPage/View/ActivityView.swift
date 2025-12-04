@@ -35,7 +35,7 @@ struct ActivityView: View {
                             NavigationLink {
                                 ProfileView()
                             } label: {
-                                topButton(icon: "person.crop.circle")
+                                topButton(icon: "person.fill")
                             }
 
                            

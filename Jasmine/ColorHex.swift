@@ -23,4 +23,5 @@ extension Color {
     }
 
     static let jasmineGreen = Color(hex: "A3CD9E")
+    static let lightJasmine = Color(hex: "F3F7E8")
 }
