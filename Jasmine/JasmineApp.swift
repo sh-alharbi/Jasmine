@@ -5,6 +5,7 @@ import Supabase
 struct JasmineApp: App {
     
     // علشان يكون light mode اجباري
+    /////
     init() {
            UIView.appearance().overrideUserInterfaceStyle = .light
        }
