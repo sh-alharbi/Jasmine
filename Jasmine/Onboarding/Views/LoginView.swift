@@ -55,7 +55,7 @@ struct LoginView: View {
                         .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
                         .autocorrectionDisabled(true)
                         .textInputAutocapitalization(.never)
-                        .glassEffect(.clear)
+                        .glassEffect(.clear).foregroundStyle(.black)
                 }
 
                 // Password Field

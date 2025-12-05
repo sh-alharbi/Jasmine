@@ -3,18 +3,24 @@ import Supabase
 
 @main
 struct JasmineApp: App {
+    
+    // علشان يكون light mode اجباري
+    init() {
+           UIView.appearance().overrideUserInterfaceStyle = .light
+       }
 
     @StateObject var session = SessionStore()
     @StateObject var routineStore = RoutineStore()
-
+ 
     var body: some Scene {
+        
         WindowGroup {
             Group {
                 if session.userID != nil {
                     
                     ActivityView()
                 } else {
-                    WelcomeView()
+                   SplashView()
                 }
             }
             .environmentObject(session)

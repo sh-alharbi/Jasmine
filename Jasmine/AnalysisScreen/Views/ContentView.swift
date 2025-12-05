@@ -159,74 +159,105 @@ struct ContentView: View {
                         }
                     }
                 }
-                
-                // STEP 3
+//                
+//                // STEP 3
+//                else if step == 3 {
+//                    VStack(spacing: 16) {
+//                        Text("Save your result to history.")
+//                            .font(.title3)
+//                            .padding(.top)
+//                        
+//                        Toggle("Save to history", isOn: $saveToHistory)
+//                            .tint(.green)
+//                            .padding(.horizontal)
+//                        
+//                        if isSaving {
+//                            ProgressView()
+//                        }
+//                        
+//                        if let infoMsg {
+//                            Text(infoMsg)
+//                                .font(.footnote)
+//                                .foregroundColor(.secondary)
+//                                .multilineTextAlignment(.center)
+//                                .padding(.horizontal)
+//                        }
+//                        
+//                        Image(systemName: "checkmark.circle.fill")
+//                            .font(.system(size: 60))
+//                            .foregroundColor(.green)
+//                            .padding(.top, 6)
+//                        
+//                        HStack(spacing: 12) {
+////                            Button("Finish") {
+////                                Task { await SaveToHistory() }
+////                            }
+////                            .buttonStyle(.borderedProminent)
+////                            .tint(.green)
+////                            .disabled(isSaving)
+//                            Button("Finish") {
+//                                Task {
+//                                    await SaveToHistory()
+//                                    
+//                                    await MainActor.run {
+//                                        goToActivity = true
+//                                    }
+//                                }}.buttonStyle(.borderedProminent)
+//                                    .tint(.green)
+//                                
+//                            Button("Start New Analysis") {
+//                                step = 1
+//                                result = nil
+//                                selectedImage = nil
+//                                errorMsg = nil
+//                                infoMsg = nil
+//                                saveToHistory = false
+//                            }
+//                            .buttonStyle(.bordered)
+//                        }
+//                        .padding(.top, 6)
+//                    }
+//                }
                 else if step == 3 {
-                    VStack(spacing: 16) {
-                        Text("Save your result to history.")
-                            .font(.title3)
-                            .padding(.top)
-                        
+                    VStack(spacing: 20) {
+
                         Toggle("Save to history", isOn: $saveToHistory)
                             .tint(.green)
                             .padding(.horizontal)
-                        
+
                         if isSaving {
                             ProgressView()
+                                .padding(.top, 4)
                         }
-                        
-                        if let infoMsg {
-                            Text(infoMsg)
-                                .font(.footnote)
-                                .foregroundColor(.secondary)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal)
-                        }
-                        
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 60))
-                            .foregroundColor(.green)
-                            .padding(.top, 6)
-                        
-                        HStack(spacing: 12) {
-//                            Button("Finish") {
-//                                Task { await SaveToHistory() }
-//                            }
-//                            .buttonStyle(.borderedProminent)
-//                            .tint(.green)
-//                            .disabled(isSaving)
-                            Button("Finish") {
-                                Task {
+
+                        Button("Finish") {
+                            Task {
+                                if saveToHistory {
                                     await SaveToHistory()
-                                    
-                                    await MainActor.run {
-                                        goToActivity = true
-                                    }
-                                }}.buttonStyle(.borderedProminent)
-                                    .tint(.green)
-                                
-                            Button("Start New Analysis") {
-                                step = 1
-                                result = nil
-                                selectedImage = nil
-                                errorMsg = nil
-                                infoMsg = nil
-                                saveToHistory = false
+                                }
+                                await MainActor.run {
+                                    goToActivity = true
+                                }
                             }
-                            .buttonStyle(.bordered)
                         }
-                        .padding(.top, 6)
+                        .buttonStyle(.borderedProminent)
+                        .tint(.green)
+                        .disabled(isSaving)
+                        .padding(.top, 30)
                     }
                 }
+
+
                 
                 Spacer(minLength: 0)
             }
             .padding()
-            .navigationTitle("Jasmine")
-            .navigationDestination(isPresented: $goToActivity) {
-                ActivityView()
-            }
+           
 
+        } .fullScreenCover(isPresented: $goToActivity) {
+            ActivityView()
+                .environmentObject(SessionStore())
+                .environmentObject(RoutineStore())
         }
     }
 
@@ -333,8 +364,8 @@ struct ContentView: View {
     }
 }
 
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        ContentView(onSignOut: { })
-    }
+#Preview {
+    ContentView(onSignOut: { })
+        .environmentObject(SessionStore())
+        .environmentObject(RoutineStore())
 }
