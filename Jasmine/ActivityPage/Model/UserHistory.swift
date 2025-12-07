@@ -4,33 +4,44 @@
 //
 //  Created by lamess on 14/06/1447 AH.
 //
-
 import Foundation
 
 struct UserHistory: Identifiable {
     let id: String
     let condition: String
-    let date: String      // "2025-10-24"
-    let imagePath: String?
-}
+    let date: String
+    let imagePath: String
+    let recommendation: String
 
-extension UserHistory {
+    var formattedDate: String { date }
 
-    /// returns true when condition is "all clear"
     var isClear: Bool {
-        condition.lowercased() == "all clear"
+        condition.lowercased() == "normal" || condition.lowercased() == "clear"
     }
 
-    /// Converts yyyy-MM-dd → October 24, 2025
-    var formattedDate: String {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
+    // ✅ تقسيم المحتوى
+    var explanation: String {
+        extractSection(title: "Explanation")
+    }
 
-        if let d = f.date(from: date) {
-            f.dateFormat = "MMMM dd, yyyy"
-            return f.string(from: d)
+    var tips: String {
+        extractSection(title: "Tips")
+    }
+
+    var sources: String {
+        extractSection(title: "Sources")
+    }
+
+    private func extractSection(title: String) -> String {
+        let parts = recommendation.components(separatedBy: "###")
+        for part in parts {
+            if part.lowercased().contains(title.lowercased()) {
+                return part
+                    .replacingOccurrences(of: title, with: "")
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+            }
         }
-
-        return date   // fallback
+        return "Not available"
     }
 }
+

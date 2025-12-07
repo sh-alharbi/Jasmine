@@ -3,9 +3,7 @@
 //  Jasmine
 //
 //  Created by lamess on 09/06/1447 AH.
-//
 import Foundation
-import SwiftUI
 import Supabase
 import Combine
 
@@ -16,136 +14,97 @@ class ActivityViewModel: ObservableObject {
     @Published var loading = false
     @Published var selectedEntry: UserHistory?
     @Published var showPopUp = false
+    // ✅ ترقيم الحالات بعد الترتيب الصحيح
+    func numberedCondition(for item: UserHistory) -> String {
 
-//    func loadHistory(userId: String) async {
-//        loading = true
-//        defer { loading = false }
-//
-//        do {
-//            // 1) Fetch all images of this user
-//            let imageResponse = try await Supa.client
-//                .from("skin_images")
-//                .select("""
-//                    imageid,
-//                    userid,
-//                    uploaddate,
-//                    storagepath
-//                """)
-//                .eq("userid", value: userId)
-//                .order("uploaddate", ascending: false)
-//                .execute()
-//
-//            // Decode rows
-//            let images: [SkinImageRow] = try JSONDecoder().decode([SkinImageRow].self, from: imageResponse.data)
-//
-//            var combined: [UserHistory] = []
-//
-//            // 2) For each image, fetch its analysis
-//            for img in images {
-//
-//                let analysisResponse = try await Supa.client
-//                    .from("analysis")
-//                    .select("""
-//                        analysisid,
-//                        imageid,
-//                        conditionlabel,
-//                        recommendation
-//                    """)
-//                    .eq("imageid", value: img.imageid)
-//                    .single()     // كل صورة لها تحليل واحد فقط
-//                    .execute()
-//
-//                let analysis = try JSONDecoder().decode(AnalysisRow.self, from: analysisResponse.data)
-//
-//                let entry = UserHistory(
-//                    id: img.imageid,
-//                    condition: analysis.conditionlabel,
-//                    date: img.uploaddate,
-//                    imagePath: img.storagepath
-//                )
-//
-//                combined.append(entry)
-//            }
-//
-//            self.history = combined
-//
-//        } catch {
-//            print("❌ ERROR Loading History:", error.localizedDescription)
-//        }
-//    }
+        let sameConditions = history.filter {
+            $0.condition.lowercased() == item.condition.lowercased()
+        }
 
+        // لو حالة وحدة فقط → بدون رقم
+        if sameConditions.count == 1 {
+            return item.condition.capitalized
+        }
+
+        // ترتيب من الأقدم إلى الأحدث للترقيم فقط
+        let sorted = sameConditions.sorted {
+            $0.date < $1.date
+        }
+
+        if let index = sorted.firstIndex(where: { $0.id == item.id }) {
+            let number = index + 1
+
+            // ✅ لا نعرض 1
+            if number == 1 {
+                return item.condition.capitalized
+            } else {
+                return "\(item.condition.capitalized) \(number)"
+            }
+        }
+
+        return item.condition.capitalized
+    }
+
+
+
+    // ✅ تحميل التاريخ مع ترتيب زمني صحيح فعليًا
     func loadHistory(userId: String) async {
         loading = true
         defer { loading = false }
 
-        print("🟢 loadHistory called with userId:", userId)
-
         do {
             let imageResponse = try await Supa.client
                 .from("skin_images")
-                .select("""
-                    imageid,
-                    userid,
-                    uploaddate,
-                    storagepath
-                """)
+                .select()
                 .eq("userid", value: userId)
-                .order("uploaddate", ascending: false)
+                .order("uploaddate", ascending: false) // ✅ الترتيب من الأحدث للأقدم حسب الوقت
                 .execute()
 
-            print("📸 Raw image response:", String(data: imageResponse.data, encoding: .utf8) ?? "nil")
 
-            let images: [SkinImageRow] = try JSONDecoder().decode([SkinImageRow].self, from: imageResponse.data)
-
-            print("✅ Images count:", images.count)
+            let images = try JSONDecoder().decode([SkinImageRow].self, from: imageResponse.data)
 
             var combined: [UserHistory] = []
 
             for img in images {
-                print("➡️ Fetching analysis for image:", img.imageid)
-
                 let analysisResponse = try await Supa.client
                     .from("analysis")
-                    .select("""
-                        analysisid,
-                        imageid,
-                        conditionlabel,
-                        recommendation
-                    """)
+                    .select()
                     .eq("imageid", value: img.imageid)
-                    .single()
                     .execute()
 
-                print("🧪 Raw analysis:", String(data: analysisResponse.data, encoding: .utf8) ?? "nil")
+                let analysisList = try JSONDecoder().decode([AnalysisRow].self, from: analysisResponse.data)
 
-                let analysis = try JSONDecoder().decode(AnalysisRow.self, from: analysisResponse.data)
+                guard let analysis = analysisList.first else { continue }
 
                 let entry = UserHistory(
                     id: img.imageid,
                     condition: analysis.conditionlabel,
                     date: img.uploaddate,
-                    imagePath: img.storagepath
+                    imagePath: img.storagepath,
+                    recommendation: analysis.recommendation
                 )
 
                 combined.append(entry)
             }
 
-            self.history = combined
-            print("✅ Final history count:", combined.count)
-
+            self.history = combined  // ✅ يصل مرتب جاهز
         } catch {
-            print("❌ ERROR Loading History FULL:", error)
+            print("❌ loadHistory error:", error.localizedDescription)
         }
     }
 
+
+
+
+    // ✅ فتح البوب
     func openDetails(_ item: UserHistory) {
         selectedEntry = item
         showPopUp = true
     }
 
+    // ✅ إغلاق البوب
     func closePopUp() {
         selectedEntry = nil
         showPopUp = false
     }
 }
-

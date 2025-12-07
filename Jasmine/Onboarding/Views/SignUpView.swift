@@ -13,6 +13,12 @@ struct SignUpView: View {
     @State private var dob = Date()
     var action: () -> Void = { }
     
+    func isOver18() -> Bool {
+        let calendar = Calendar.current
+        let age = calendar.dateComponents([.year], from: dob, to: Date()).year ?? 0
+        return age >= 18
+    }
+    
     var body: some View {
         ZStack {
             // الخلفية
@@ -130,7 +136,11 @@ struct SignUpView: View {
                 
                 // Create Account Button — نفس زر Login
                 Button {
-                    Task { await viewModel.signUp() }
+                    if isOver18() {
+                           Task { await viewModel.signUp() }
+                       } else {
+                           viewModel.error = "You must be 18 years or older"
+                       }
                 } label: {
                     Text("Create account")
                         .frame(maxWidth: .infinity)

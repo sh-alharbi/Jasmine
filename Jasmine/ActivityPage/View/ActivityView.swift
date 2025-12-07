@@ -3,7 +3,8 @@
 //  Jasmine
 //
 //  Created by lamess on 08/06/1447 AH.
-//
+
+
 import SwiftUI
 import Combine
 import Supabase
@@ -20,7 +21,7 @@ struct ActivityView: View {
             ZStack {
 
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 30) {
 
                         // MARK: Header
                         HStack {
@@ -58,12 +59,27 @@ struct ActivityView: View {
 
                         VStack(spacing: 14) {
                             if vm.loading {
-                                ProgressView()
-                                    .padding(.top)
+                                ProgressView().padding(.top)
+                            } else if vm.history.isEmpty {
+                                VStack {
+                                    Spacer()
+                                    
+                                    Text("No history yet")
+                                        .foregroundColor(.gray)
+                                        .font(.body)
+                                    
+                                    Spacer()
+                                }
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                
+                                
+                                
                             } else {
                                 ForEach(vm.history) { item in
                                     historyCell(item)
-                                        .onTapGesture { vm.openDetails(item) }
+                                        .onTapGesture {
+                                            vm.openDetails(item)
+                                        }
                                 }
                             }
                         }
@@ -73,39 +89,28 @@ struct ActivityView: View {
                 }
                 .navigationBarHidden(true)
 
-                // MARK: Popup View
+                // ✅ POPUP
                 if vm.showPopUp, let selected = vm.selectedEntry {
                     LargeHistoryPopUp(entry: selected) {
                         vm.closePopUp()
                     }
-                    .zIndex(20).transition(.scale.combined(with: .opacity))
+                    .zIndex(20)
+                    .transition(.scale.combined(with: .opacity))
                 }
-
             }
+
+            // ✅ تحميل البيانات المعتمد رسميًا
             .onAppear {
                 Task {
-                    do {
-                        let session = try await Supa.client.auth.session
-                        let uid = session.user.id.uuidString
-
-                        print("🟢 Logged User:", uid)
-
-                        await vm.loadHistory(userId: uid)
-
-                    } catch {
-                        print("❌ No active session:", error.localizedDescription)
+                    guard let uid = session.userID else {
+                        print("❌ User not logged in")
+                        return
                     }
+
+                    await vm.loadHistory(userId: uid)
                 }
             }
 
-
-//            .onAppear {
-//                Task {
-//                    if let uid = session.userID {
-//                        await vm.loadHistory(userId: uid)
-//                    }
-//                }
-//            }
         }
         .navigationBarBackButtonHidden(true)
     }
@@ -125,7 +130,6 @@ struct ActivityView: View {
     // MARK: Reward Card
     var rewardCard: some View {
         VStack(alignment: .leading, spacing: 6) {
-
             Text("Reward Points")
                 .foregroundColor(.black.opacity(0.6))
 
@@ -137,8 +141,9 @@ struct ActivityView: View {
                     .foregroundColor(.gray)
             }
 
-            ProgressView(value: 0)
-                .tint(Color.green)
+            ProgressView(value: Double(routineStore.totalPoints), total: 500)
+                .tint(.jasmineGreen)
+
         }
         .padding()
         .background(
@@ -162,7 +167,7 @@ struct ActivityView: View {
                 .font(.system(size: 26))
                 .foregroundColor(.black)
 
-            Text("Skin your scan now!")
+            Text("Scan your skin now!!")
                 .font(.headline)
                 .foregroundColor(.black)
 
@@ -186,7 +191,8 @@ struct ActivityView: View {
                 .font(.system(size: 32))
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(item.condition.capitalized)
+               
+                Text(vm.numberedCondition(for: item))
                     .font(.headline)
 
                 Text("Date: \(item.formattedDate)")
@@ -206,5 +212,5 @@ struct ActivityView: View {
     ActivityView()
         .environmentObject(SessionStore())
         .environmentObject(RoutineStore())
-
+    
 }

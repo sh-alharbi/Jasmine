@@ -4,7 +4,6 @@
 //
 //  Created by Shahad Alharbi on 11/5/25.
 //
-
 import SwiftUI
 import PhotosUI
 
@@ -13,135 +12,234 @@ import Supabase
 #endif
 
 struct ContentView: View {
-    // الصوره الي اختارها
-    @State private var selectedItem: PhotosPickerItem? = nil
-    // الصوره الي اختارها بعد تحويلها ل uiimage
-    @State private var selectedImage: UIImage? = nil
-    @State private var isLoading = false
-    // النتيجة الي تجينا من ال fastapi
-    @State private var result: PredictResponse? = nil
-    @State private var step: Int = 1
-    @State private var errorMsg: String? = nil
 
-    @State private var saveToHistory = false
-    @State private var isSaving = false
-    @State private var infoMsg: String? = nil
-    @State private var goToActivity = false
+    @EnvironmentObject var session: SessionStore
+    @EnvironmentObject var routineStore: RoutineStore
+
+    @StateObject private var vm = ContentViewModel()
+    @State private var selectedItem: PhotosPickerItem? = nil
+    let darkGreen = Color(
+        red: 31/255,   // 1F
+        green: 117/255,// 75
+        blue: 31/255   // 1F
+    )
+
+    let midGreen = Color(
+        red: 159/255,  // 9F
+        green: 203/255,// CB
+        blue: 154/255  // 9A
+    )
+
 
     let onSignOut: () async -> Void
 
     var body: some View {
         NavigationView {
             VStack(spacing: 24) {
-                
-                HStack(spacing: 30) {
-                    // الدوائر الخضراء الي تطلع فوق الشاشه
+
+
+                HStack {
                     ForEach(1...3, id: \.self) { i in
-                        VStack {
-                            Image(systemName: i <= step ? "circle.fill" : "circle")
-                                .foregroundColor(i <= step ? .green : .gray)
+                        VStack(spacing: 6) {
+                            ZStack {
+                                Circle()
+                                    .fill(i <= vm.step ? midGreen : Color.gray.opacity(0.15))
+                                    .frame(width: 50, height: 50)
+
+                                Image(systemName: i == 1 ? "square.and.arrow.up"
+                                     : i == 2 ? "doc.text"
+                                     : "square.and.arrow.down")
+                                    .foregroundColor(i <= vm.step ? darkGreen : .gray)
+                            }
+
                             Text("Step \(i)")
                                 .font(.caption)
-                                .foregroundColor(.gray)
+                                .foregroundColor(.black)
+                        }
+
+                        if i != 3 {
+                            Rectangle()
+                                .fill(i < vm.step ? darkGreen : Color.gray.opacity(0.3))
+                                .frame(width: 40, height: 2)
                         }
                     }
                 }
-                
-                // STEP 1 = يحط الصورة
-                if step == 1 {
+                .padding(.bottom, 10)
+
+                // ✅ STEP 1 = Upload Photo
+                if vm.step == 1 {
                     VStack(spacing: 16) {
+                        Spacer()
                         Text("Upload Photo")
                             .font(.title2).bold()
-                        
+
                         PhotosPicker(selection: $selectedItem, matching: .images) {
-                            VStack {
-                                Image(systemName: "icloud.and.arrow.up")
-                                    .font(.system(size: 40))
-                                    .foregroundColor(.green)
+                            VStack(spacing: 10) {
+
+                                ZStack {
+                                    Circle()
+                                        .fill(midGreen.opacity(0.25))
+                                        .frame(width: 60, height: 60)
+
+                                    Image(systemName: "icloud.and.arrow.up")
+                                        .font(.system(size: 26))
+                                        .foregroundColor(darkGreen)
+                                }
+
                                 Text("Tap to upload photo")
-                                    .font(.body)
+                                    .font(.headline)
+                                    .foregroundColor(darkGreen)
+
+                                Text("Png , JPG")
+                                    .font(.caption)
                                     .foregroundColor(.gray)
                             }
-                            .frame(width: 250, height: 200)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color.green.opacity(0.4), style: StrokeStyle(lineWidth: 2, dash: [6]))
+                            .frame(width: 300,height: 290 )
+                            .background(
+                                RoundedRectangle(cornerRadius: 40)
+                                    .stroke(.gray.opacity(0.3), style: StrokeStyle(lineWidth: 2, dash: [6]))
                             )
+                            .padding(.horizontal)
+                            
                         }
+                        Spacer()
+
                         .onChange(of: selectedItem) { newItem in
                             Task {
                                 if let data = try? await newItem?.loadTransferable(type: Data.self),
                                    let uiImage = UIImage(data: data) {
-                                    selectedImage = uiImage
+                                    vm.selectedImage = uiImage
                                 }
                             }
                         }
-                        
-                        if let selectedImage {
-                            // بعد ما اختار وحط الصوره بنعدل مكانها وحجمها بالواجهه
-                            Image(uiImage: selectedImage)
+
+                        if let img = vm.selectedImage {
+                            Image(uiImage: img)
                                 .resizable()
                                 .scaledToFit()
                                 .frame(width: 220, height: 160)
                                 .cornerRadius(12)
                         }
-                        
+
                         Button("Continue") {
-                            step = 2
+                            vm.step = 2
                         }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.green)
-                        .disabled(selectedImage == nil)
+                        .frame(maxWidth: 250)
+                        .padding()
+                        .background(Color(red: 153/255, green: 188/255, blue: 148/255))
+                        .foregroundColor(.white)
+                        .font(.headline)
+                        .cornerRadius(28)
+                        .padding(.top, 10)
+                        .disabled(vm.selectedImage == nil)
                     }
+                    Spacer()
                 }
                 
-                // STEP 2 = التحليل
-                else if step == 2 {
+
+                // ✅ STEP 2 = Analysis
+                else if vm.step == 2 {
                     ScrollView {
                         VStack(spacing: 16) {
-                            Text("Analyzing...")
-                                .font(.title2)
-                                .bold()
+                            Spacer()
                             
-                            if isLoading {
+                            if vm.isLoading {
+                                Text("Analyzing...")
+                                    .font(.title2)
+                                    .bold()
+                            }
+
+                            if vm.isLoading {
                                 ProgressView()
-                                // اذا فعلا ال fastapi طلعت لنا بنتيجة
-                            } else if let result = result {
-                                VStack(alignment: .leading, spacing: 12) {
-                                    Text("Predicted Condition:")
-                                        .font(.headline)
-                                    Text(result.top1.label.capitalized)
-                                        .foregroundColor(.green)
-                                        .font(.headline)
-                                    
-                                    Divider()
-                                    // اذا التشات جبتي فعلا رجع شرح
-                                    if let expl = result.chatgpt_explanation, !expl.isEmpty {
-                                        Text("Explanation of the Disease")
+                            }
+                            else if let result = vm.result {
+
+                                VStack(alignment: .leading, spacing: 16) {
+
+                                    // ✅ Predicted Condition
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Text("Predicted Condition:")
                                             .font(.headline)
-                                        Text(expl)
-                                            .font(.body)
-                                            .foregroundColor(.secondary)
-                                            .multilineTextAlignment(.leading)
-                                        Divider()
+
+                                        Text(result.top1.label.capitalized)
+                                            .font(.title3.bold())
+                                            .foregroundColor(darkGreen)
                                     }
-                                    
+
+                                    Divider()
+
+                                    // ✅ Explanation
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        Label("Explanation", systemImage: "doc.text")
+                                            .font(.headline)
+
+                                        Text(
+                                            result.chatgpt_explanation?
+                                                .section("Explanation")
+                                                .cleanMarkdown() ?? ""
+                                        )
+                                        .font(.system(size: 15))
+                                        .foregroundColor(.black)
+
+
+                                    }
+
+                                    Divider()
+
+                                    // ✅ Tips
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        Label("Tips", systemImage: "lightbulb")
+                                            .font(.headline)
+
+                                        Text(
+                                            result.chatgpt_explanation?
+                                                .section("Tips")
+                                                .cleanMarkdown() ?? ""
+                                        )
+                                        .font(.system(size: 15))
+                                        .foregroundColor(.black)
+
+
+                                    }
+
+                                    Divider()
+
+                                    // ✅ Sources
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        Label("Sources", systemImage: "link")
+                                            .font(.headline)
+
+                                        Text(
+                                            result.chatgpt_explanation?
+                                                .section("Sources")
+                                                .cleanMarkdown() ?? ""
+                                        )
+                                        .font(.system(size: 15))
+                                        .foregroundColor(.black)
+
+                                    }
+
                                     Button("Continue") {
-                                        step = 3
+                                        vm.step = 3
                                     }
-                                    .buttonStyle(.borderedProminent)
-                                    .tint(.green)
+                                    .padding(.top, 10)
+                                    .frame(width: 250)
+                                    .background(Color(red: 153/255, green: 188/255, blue: 148/255))
+                                    .foregroundColor(.white)
+                                    .font(.headline)
+                                    .cornerRadius(28)
+                                    
                                 }
+
                             } else {
-                                // ماتحملت الصوره او ماعندنا شرح للحاله
                                 Button("Analyze Photo") {
-                                    Task { await analyze() }
+                                    Task { await vm.analyze() }
                                 }
                                 .buttonStyle(.borderedProminent)
                                 .tint(.green)
-                                .disabled(selectedImage == nil)
-                                
-                                if let errorMsg {
+                                .disabled(vm.selectedImage == nil)
+
+                                if let errorMsg = vm.errorMsg {
                                     Text(errorMsg)
                                         .foregroundColor(.red)
                                         .font(.footnote)
@@ -154,213 +252,70 @@ struct ContentView: View {
                         .padding(.horizontal)
                     }
                     .task {
-                        if result == nil, selectedImage != nil, !isLoading {
-                            await analyze()
+                        if vm.result == nil,
+                           vm.selectedImage != nil,
+                           !vm.isLoading {
+                            await vm.analyze()
                         }
                     }
                 }
-//                
-//                // STEP 3
-//                else if step == 3 {
-//                    VStack(spacing: 16) {
-//                        Text("Save your result to history.")
-//                            .font(.title3)
-//                            .padding(.top)
-//                        
-//                        Toggle("Save to history", isOn: $saveToHistory)
-//                            .tint(.green)
-//                            .padding(.horizontal)
-//                        
-//                        if isSaving {
-//                            ProgressView()
-//                        }
-//                        
-//                        if let infoMsg {
-//                            Text(infoMsg)
-//                                .font(.footnote)
-//                                .foregroundColor(.secondary)
-//                                .multilineTextAlignment(.center)
-//                                .padding(.horizontal)
-//                        }
-//                        
-//                        Image(systemName: "checkmark.circle.fill")
-//                            .font(.system(size: 60))
-//                            .foregroundColor(.green)
-//                            .padding(.top, 6)
-//                        
-//                        HStack(spacing: 12) {
-////                            Button("Finish") {
-////                                Task { await SaveToHistory() }
-////                            }
-////                            .buttonStyle(.borderedProminent)
-////                            .tint(.green)
-////                            .disabled(isSaving)
-//                            Button("Finish") {
-//                                Task {
-//                                    await SaveToHistory()
-//                                    
-//                                    await MainActor.run {
-//                                        goToActivity = true
-//                                    }
-//                                }}.buttonStyle(.borderedProminent)
-//                                    .tint(.green)
-//                                
-//                            Button("Start New Analysis") {
-//                                step = 1
-//                                result = nil
-//                                selectedImage = nil
-//                                errorMsg = nil
-//                                infoMsg = nil
-//                                saveToHistory = false
-//                            }
-//                            .buttonStyle(.bordered)
-//                        }
-//                        .padding(.top, 6)
-//                    }
-//                }
-                else if step == 3 {
-                    VStack(spacing: 20) {
 
-                        Toggle("Save to history", isOn: $saveToHistory)
-                            .tint(.green)
+                // ✅ STEP 3 = Save Decision
+                else if vm.step == 3 {
+
+                    VStack(spacing: 24) {
+
+                        Spacer()
+
+                        Text("Do you want to save this result to history?")
+                            .font(.headline)
+                            .foregroundColor(.black)
+                            .multilineTextAlignment(.center)
                             .padding(.horizontal)
 
-                        if isSaving {
-                            ProgressView()
-                                .padding(.top, 4)
-                        }
 
-                        Button("Finish") {
-                            Task {
-                                if saveToHistory {
-                                    await SaveToHistory()
-                                }
-                                await MainActor.run {
-                                    goToActivity = true
+                            // ❌ زر Skip
+                           
+                            // ✅ زر Save to History
+                            Button("Save to History") {
+                                Task {
+                                    guard let session = Supa.client.auth.currentSession else { return }
+                                    let userId = session.user.id.uuidString
+
+                                    vm.saveToHistory = true
+                                    await vm.saveToHistory(userId: userId)
+                                    vm.goToActivity = true
                                 }
                             }
+                            .frame(width: 250, height: 54)
+                            .background(Color(red: 153/255, green: 188/255, blue: 148/255))   // 🌿 لونك المتوسط
+                            .foregroundColor(.white)
+                            .font(.headline)
+                            .cornerRadius(26)
+                        
+                        Button("Skip") {
+                            vm.saveToHistory = false
+                            vm.goToActivity = true
                         }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.green)
-                        .disabled(isSaving)
-                        .padding(.top, 30)
+                        .frame(width: 250, height: 54)
+                        .background(Color.gray.opacity(0.2))
+                        .foregroundColor(.black)
+                        .font(.headline)
+                        .cornerRadius(26)
+
+                        Spacer()
                     }
                 }
 
-
-                
                 Spacer(minLength: 0)
             }
             .padding()
-           
-
-        } .fullScreenCover(isPresented: $goToActivity) {
+        }
+        .fullScreenCover(isPresented: $vm.goToActivity) {
             ActivityView()
-                .environmentObject(SessionStore())
-                .environmentObject(RoutineStore())
+                .environmentObject(session)
+                .environmentObject(routineStore)
         }
-    }
-
-    func analyze() async {
-        // 1)  تأكيد وجود صورة مختارة من اليوزر
-        guard let selectedImage else {
-            errorMsg = "Please select a photo first."
-            return
-        }
-        isLoading = true
-        errorMsg = nil
-        defer { isLoading = false }
-
-        do {
-            //  أرسل الصورة وانتظر الرد( 2
-            let res = try await SkinAPIService.shared.predict(image: selectedImage, topk: 1)
-            self.result = res
-        } catch {
-            // 3) خزّن النتيجة لعرضها في Step 2
-
-            self.result = nil
-            self.errorMsg = error.localizedDescription
-            print("❌ Error:", error.localizedDescription)
-        }
-    }
-
-    func SaveToHistory() async {
-        guard saveToHistory else {
-            infoMsg = "Skipped saving. You can enable the toggle to save next time."
-            return
-        }
-        guard let img = selectedImage else {
-            infoMsg = "No image to save."
-            return
-        }
-        isSaving = true
-        defer { isSaving = false }
-
-        do {
-            #if canImport(Supabase)
-            // 1) ارفعي الصورة على Storage
-            let fileName = "\(UUID().uuidString).jpg"
-            guard let data = img.jpegData(compressionQuality: 0.9) else {
-                infoMsg = "Failed to encode image."
-                return
-            }
-
-            let storage = Supa.client.storage.from("skin-images")
-            _ = try await storage.upload(
-                path: fileName,
-                file: data,
-                options: FileOptions(contentType: "image/jpeg", upsert: true) // حدّدنا النوع لتجنب "Cannot infer contextual base"
-            )
-
-            let publicURL = try storage.getPublicURL(path: fileName).absoluteString
-            _ = publicURL
-
-            let userId: String
-            if let session = try? await Supa.client.auth.session {
-                userId = session.user.id.uuidString
-            } else if let session = Supa.client.auth.currentSession {
-                userId = session.user.id.uuidString
-            } else {
-                infoMsg = "Saved file. Login required to write DB row."
-                return
-            }
-
-
-            struct Row: Encodable {
-                let imageid: String
-                let userid: String
-                let uploaddate: String
-                let storagepath: String
-            }
-
-            let row = Row(
-                imageid: UUID().uuidString,
-                userid: userId,
-                uploaddate: isoDateString(Date()),
-                storagepath: fileName
-            )
-
-            try await Supa.client
-                .from("skin_images")
-                .insert(row)
-                .execute()
-
-            infoMsg = "Saved to history ✅"
-            #else
-            infoMsg = "Supabase SDK not linked. Skipped save."
-            #endif
-        } catch {
-            infoMsg = "Save failed: \(error.localizedDescription)"
-        }
-    }
-
-    func isoDateString(_ date: Date) -> String {
-        let f = DateFormatter()
-        f.calendar = Calendar(identifier: .gregorian)
-        f.locale = Locale(identifier: "en_US_POSIX")
-        f.timeZone = TimeZone(secondsFromGMT: 0)
-        f.dateFormat = "yyyy-MM-dd"
-        return f.string(from: date)
     }
 }
 
@@ -369,3 +324,4 @@ struct ContentView: View {
         .environmentObject(SessionStore())
         .environmentObject(RoutineStore())
 }
+

@@ -9,5 +9,5 @@ struct AnalysisModel: Codable {
     let analysisid: String
     let imageid: String
     let conditionlabel: String
-    let recommendation: String?
+    let recommendation: String
 }
