@@ -1,13 +1,11 @@
-//
 //  LoginViewModel.swift
 //  Jasmine
-//
-//  Created by lamess on 07/06/1447 AH.
 //
 
 import Foundation
 import Supabase
 import Combine
+
 @MainActor
 final class LoginViewModel: ObservableObject {
     @Published var email = ""
@@ -19,6 +17,7 @@ final class LoginViewModel: ObservableObject {
         !email.isEmpty && !password.isEmpty
     }
 
+    // تسجيل الدخول
     func login() async -> Bool {
         error = nil
         isBusy = true
@@ -31,20 +30,9 @@ final class LoginViewModel: ObservableObject {
             )
             return true
         } catch {
-            self.error = error.localizedDescription
+            self.error = "Invalid login credentials"
+            print("login error:", error.localizedDescription)
             return false
-        }
-    }
-
-    func forgotPassword() async {
-        error = nil
-        isBusy = true
-        defer { isBusy = false }
-
-        do {
-            try await Supa.client.auth.resetPasswordForEmail(email)
-        } catch {
-            self.error = error.localizedDescription
         }
     }
 }

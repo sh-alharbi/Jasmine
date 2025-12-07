@@ -2,10 +2,11 @@ import Foundation
 import UIKit
 
 enum SkinAPI {
-    // رابط الfastapi
-    static let baseURL = URL(string: "http://127.0.0.1:8000")!
+    // رابط الـ FastAPI على Render
+    static let baseURL = URL(string: "https://jasmine-api-o7cf.onrender.com")!
     static let predictPath = "/predict"
 }
+
 
 struct PredictResponse: Codable {
     struct TopItem: Codable {

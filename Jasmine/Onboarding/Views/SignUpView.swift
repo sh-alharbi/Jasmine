@@ -134,7 +134,6 @@ struct SignUpView: View {
                         .font(.footnote)
                 }
                 
-                // Create Account Button — نفس زر Login
                 Button {
                     if isOver18() {
                            Task { await viewModel.signUp() }

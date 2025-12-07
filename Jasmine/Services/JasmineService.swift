@@ -35,7 +35,6 @@ struct DailyRoutineRow: Codable {
 enum JasmineService {
     static let bucket = "skin-images"
 
-    // رفع صورة البشرة وتخزينها في Storage + جدول skin_images
     static func uploadSkinImage(_ image: UIImage, userID: String) async throws -> (imageID: String, path: String) {
         guard let data = image.jpegData(compressionQuality: 0.9) else {
             throw NSError(domain: "ImageEncoding", code: -1)
@@ -66,7 +65,6 @@ enum JasmineService {
         return (imageID, path)
     }
 
-    // حفظ نتيجة التحليل في جدول analysis
     static func saveAnalysis(imageID: String, label: String, recommendation: String) async throws {
         let row = AnalysisRow(
             analysisid: UUID().uuidString,
@@ -80,9 +78,7 @@ enum JasmineService {
             .execute()
     }
 
-    //  وضع علامة الروتين + زيادة النقاط
     static func markRoutine(userID: String, routine: String, routineType: String? = nil) async throws {
-        // تسجل الروتين في جدول daily_routine
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm:ss"
         let timeString = formatter.string(from: Date())
@@ -101,7 +97,6 @@ enum JasmineService {
             .insert(log)
             .execute()
 
-        // يجيب النقاط الحاليه من جدول reward_system
         struct RewardRow: Decodable { let points: Int? }
 
         let res = try await Supa.client
@@ -115,7 +110,6 @@ enum JasmineService {
         let currentPoints = reward.points ?? 0
         let newPoints = currentPoints + 5
 
-        // حدّث نقاط المستخدم في جدول reward_system
         struct RewardUpdate: Encodable { let points: Int }
 
         _ = try await Supa.client

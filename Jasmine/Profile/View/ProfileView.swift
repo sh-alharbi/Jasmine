@@ -72,22 +72,48 @@ struct ProfileView: View {
                         prefRow(
                             icon: "star.fill",
                             title: "Motivational Rewards",
-                            isOn: $routineStore.isRewardEnabled,
+                            isOn: $vm.isRewardOn,
                             isStar: true
                         )
+                        .onChange(of: vm.isRewardOn) { newValue in
+                            Task {
+                                if let uid = session.userID {
+                                    await vm.updateRewardPreference(userId: uid, isOn: newValue)
+                                    routineStore.isRewardEnabled = newValue
+                                }
+                            }
+                        }
                         
                         divider
                         
                         prefRow(
                             icon: "bell.fill",
                             title: "Push Notifications",
-                            isOn: $vm.notificationsEnabled,
+                            isOn: $vm.isNotificationOn,
                             isStar: false
                         )
+                        .onChange(of: vm.isNotificationOn) { newValue in
+                            Task {
+                                if let uid = session.userID {
+                                    await vm.updateNotificationPreference(userId: uid, isOn: newValue)
+                                }
+                            }
+                        }
                     }
-                    .onChange(of: vm.notificationsEnabled) { newValue in
-                        if newValue { vm.requestNotificationPermission() }
+                    
+                    Button(role: .destructive) {
+                        Task {
+                            await session.signOut()
+                        }
+                    } label: {
+                        Text("Log out")
+                            .font(.system(size: 16, weight: .semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(Color.white)
+                            .cornerRadius(16)
                     }
+                    .padding(.horizontal)
                     
                     Spacer(minLength: 20)
                 }
@@ -95,17 +121,21 @@ struct ProfileView: View {
             }
             .background(Color.white.ignoresSafeArea())
             .sheet(isPresented: $showingEditNameSheet) {
-                EditNameView(vm: vm)
-                    .presentationDetents([.medium])
+                EditNameView(
+                    vm: vm,
+                    userId: session.userID ?? ""
+                )
+                .presentationDetents([.medium])
             }
         }
         .task {
-            await vm.checkNotificationStatus()
             if let uid = session.userID {
                 await vm.loadUser(userId: uid)
+                routineStore.isRewardEnabled = vm.isRewardOn
             }
         }
     }
+    
     
     func topButton(icon: String) -> some View {
         Image(systemName: icon)
@@ -199,30 +229,31 @@ struct ProfileView: View {
 
 struct EditNameView: View {
     @ObservedObject var vm: ProfileViewModel
+    let userId: String
+
     @State private var newName: String = ""
     @Environment(\.dismiss) var dismiss
-    
+
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 20) {
-                
+
                 Text("Edit Your Full Name")
                     .font(.title2.bold())
                     .frame(maxWidth: .infinity, alignment: .center)
-                
+
                 Text("New Name")
                     .font(.caption)
                     .foregroundColor(.gray)
                     .padding(.horizontal)
-                
+
                 TextField("Enter full name...", text: $newName)
                     .padding(.vertical, 14)
                     .padding(.horizontal, 15)
                     .background(Color.white)
-              
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .padding(.horizontal)
-                
+
                 Spacer()
             }
             .padding(.top, 30)
@@ -239,8 +270,15 @@ struct EditNameView: View {
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
-                        vm.fullName = newName
-                        dismiss()
+                        let name = newName
+                            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+                        guard !name.isEmpty else { return }
+
+                        Task {
+                            await vm.updateName(userId: userId, fullName: name)
+                            dismiss()
+                        }
                     }
                     .foregroundColor(.black)
                     .disabled(newName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -249,6 +287,7 @@ struct EditNameView: View {
         }
     }
 }
+
 
 #Preview {
     ProfileView()

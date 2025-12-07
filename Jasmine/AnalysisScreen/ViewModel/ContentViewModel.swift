@@ -13,7 +13,6 @@ import Combine
 @MainActor
 class ContentViewModel: ObservableObject {
 
-    // MARK: - UI State
     @Published var selectedImage: UIImage? = nil
     @Published var isLoading = false
     @Published var result: PredictResponse? = nil
@@ -24,7 +23,6 @@ class ContentViewModel: ObservableObject {
     @Published var infoMsg: String? = nil
     @Published var goToActivity = false
 
-    // MARK: - Analysis
     func analyze() async {
         guard let selectedImage else {
             errorMsg = "Please select a photo first."
@@ -44,7 +42,6 @@ class ContentViewModel: ObservableObject {
         }
     }
 
-    // MARK: - Save To History
     func saveToHistory(userId: String) async {
 
         guard saveToHistory else { return }
@@ -66,7 +63,6 @@ class ContentViewModel: ObservableObject {
                 return
             }
 
-            // ✅ رفع الصورة
             try await Supa.client.storage
                 .from("skin-images")
                 .upload(
@@ -75,7 +71,6 @@ class ContentViewModel: ObservableObject {
                     options: FileOptions(contentType: "image/jpeg", upsert: true)
                 )
 
-            // ✅ حفظ في skin_images
             struct SkinImageRow: Encodable {
                 let imageid: String
                 let userid: String
@@ -95,7 +90,6 @@ class ContentViewModel: ObservableObject {
                 .insert(imageRow)
                 .execute()
 
-            // ✅ حفظ في analysis
             struct AnalysisRow: Encodable {
                 let analysisid: String
                 let imageid: String
@@ -123,7 +117,6 @@ class ContentViewModel: ObservableObject {
         }
     }
 
-    // MARK: - Helpers
     private func isoDateString(_ date: Date) -> String {
         let f = DateFormatter()
         f.calendar = Calendar(identifier: .gregorian)

@@ -1,16 +1,13 @@
-//
-//  LoginView.swift
-//  Jasmine
-//
-//  Created by lamess on 07/06/1447 AH.
-//
-
 import SwiftUI
 
 struct LoginView: View {
+    @EnvironmentObject var session: SessionStore
+    @EnvironmentObject var routineStore: RoutineStore
+
     @StateObject var viewModel = LoginViewModel()
     @State private var showSignup = false
     @State private var isLoggedIn = false
+
     var action1: () -> Void = { }
 
     var body: some View {
@@ -49,13 +46,14 @@ struct LoginView: View {
                         .foregroundColor(.gray)
 
                     TextField("UserEmail@Gmail. com", text: $viewModel.email)
-                        .padding()
-                        .background(.white.opacity(0.9))
-                        .cornerRadius(12)
-                        .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
-                        .autocorrectionDisabled(true)
-                        .textInputAutocapitalization(.never)
-                        .glassEffect(.clear).foregroundStyle(.black)
+                                           .padding()
+                                           .background(.white.opacity(0.9))
+                                           .cornerRadius(12)
+                                           .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
+                                           .autocorrectionDisabled(true)
+                                           .textInputAutocapitalization(.never)
+                                           .glassEffect(.clear).foregroundStyle(.black)
+                                   
                 }
 
                 // Password Field
@@ -72,6 +70,7 @@ struct LoginView: View {
                         .glassEffect(.clear)
                 }
 
+                // Error لو فيه
                 if let error = viewModel.error {
                     Text(error)
                         .foregroundColor(.red)
@@ -79,11 +78,12 @@ struct LoginView: View {
                         .padding(.top, 4)
                 }
 
-                // Login Button
+                // 🔐 Login Button
                 Button {
                     Task {
                         let success = await viewModel.login()
                         if success {
+                            await session.loadSession()
                             isLoggedIn = true
                         }
                     }
@@ -99,9 +99,10 @@ struct LoginView: View {
                 }
                 .disabled(!viewModel.canSubmit || viewModel.isBusy)
 
-                Button(action: action1){
+                // Continue as guest
+                Button(action: action1) {
                     Text("Continue as a guest")
-                        .foregroundColor(.black) // أخضر
+                        .foregroundColor(.black)
                         .frame(maxWidth: .infinity)
                         .padding()
                         .overlay(
@@ -110,7 +111,7 @@ struct LoginView: View {
                         )
                 }
                 .glassEffect()
-                
+
                 if viewModel.isBusy {
                     ProgressView().padding(.top, 4)
                 }
@@ -130,15 +131,21 @@ struct LoginView: View {
             }
             .padding(.horizontal, 28)
         }
+        // Signup
         .fullScreenCover(isPresented: $showSignup) {
             SignUpView()
+                .environmentObject(session)
+                .environmentObject(routineStore)
         }
+        // بعد تسجيل الدخول
         .fullScreenCover(isPresented: $isLoggedIn) {
-                    ActivityView() // ← بدل ContentView
-                    
-                }
+            ActivityView()
+                .environmentObject(session)
+                .environmentObject(routineStore)
+        }
     }
 }
+
 #Preview {
     LoginView()
         .environmentObject(SessionStore())

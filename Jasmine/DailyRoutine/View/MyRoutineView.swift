@@ -128,14 +128,15 @@ struct MyRoutineView: View {
         }
         .onAppear {
             selectedDate = today
-            
-            pointsActivationAlertCount = 0
+
             if session.userID != nil,
                !store.isRewardEnabled,
-               pointsActivationAlertCount < 2 {
+               pointsActivationAlertCount == 0 {
                 showPointsAlert = true
+                pointsActivationAlertCount = 1
             }
         }
+
         .sheet(isPresented: $showAddSheet) {
             RoutineSheetView(
                 viewModel: RoutineFormViewModel(),
