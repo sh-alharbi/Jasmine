@@ -12,6 +12,7 @@ import Combine
 class SessionStore: ObservableObject {
 
     @Published var userID: String?
+    @Published var isGuest: Bool = false
 
     init() {
         Task {
@@ -27,11 +28,14 @@ class SessionStore: ObservableObject {
         } catch {
             print("❌ No active session in SessionStore")
             self.userID = nil
+            
         }
     }
 
     func signOut() async {
         try? await Supa.client.auth.signOut()
         self.userID = nil
+        self.isGuest = false     // يرجع عادي مو guest
+
     }
 }

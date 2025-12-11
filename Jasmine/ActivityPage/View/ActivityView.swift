@@ -129,22 +129,28 @@ struct ActivityView: View {
 
     // MARK: Reward Card
     var rewardCard: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Reward Points")
-                .foregroundColor(.black.opacity(0.6))
-
-            HStack(spacing: 6) {
-                Text("\(routineStore.totalPoints)")
-                    .font(.title2.bold())
+        HStack{
+            
+            VStack(alignment: .leading, spacing: 6) {
                 
-                Text("/ 500 Points to reach Gold Tier")
-                    .foregroundColor(.gray)
-            }
-
-            ProgressView(value: Double(routineStore.totalPoints), total: 500)
-                .tint(.jasmineGreen)
-
-        }
+                Text("Reward Points")
+                    .foregroundColor(.black.opacity(0.6))
+                
+                HStack(spacing: 6) {
+                    Image(systemName: "sparkles.2")
+                        .foregroundColor(.green)
+                        .font(.system(size: 23))
+                    Text("\(routineStore.totalPoints)")
+                        .font(.title2.bold())
+                    
+                    Text("/ 500 Points to reach Gold Tier")
+                        .foregroundColor(.gray)
+                }
+                
+                ProgressView(value: Double(routineStore.totalPoints), total: 500)
+                    .tint(.jasmineGreen)
+                
+            }}
         .padding()
         .background(
             LinearGradient(

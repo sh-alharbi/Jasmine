@@ -125,4 +125,17 @@ class ContentViewModel: ObservableObject {
         f.dateFormat = "yyyy-MM-dd"
         return f.string(from: date)
     }
+    
+    @MainActor
+    func resetAll() {
+        self.step = 1
+        self.selectedImage = nil
+        self.result = nil
+        self.errorMsg = nil
+        self.isLoading = false
+        self.goToActivity = false
+        self.saveToHistory = false
+    }
+
 }
+

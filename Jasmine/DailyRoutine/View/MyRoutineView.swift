@@ -20,6 +20,9 @@ struct MyRoutineView: View {
     @State private var showPointsAlert = false
     @State private var goToProfile = false
     
+    @State private var showGuestAlert = false   // ⭐⭐
+    @State private var goToLogin = false     // ⭐⭐
+
   
     @AppStorage("pointsActivationAlertCount")
     private var pointsActivationAlertCount: Int = 0
@@ -37,30 +40,6 @@ struct MyRoutineView: View {
             
             VStack(alignment: .leading, spacing: 16) {
                 
-                ZStack {
-                    HStack {
-                        Text("My Routine")
-                            .font(.title3.weight(.semibold))
-                            .frame(maxWidth: .infinity, alignment: .center)
-                        
-                        Button {
-                            showFullCalendar = true
-                        } label: {
-                            Image(systemName: "calendar")
-                                .font(.system(size: 18))
-                                .foregroundColor(.black)
-                                .frame(width: 38, height: 38)
-                                .background(Color.white)
-                                .clipShape(Circle())
-                                .shadow(color: .black.opacity(0.1),
-                                        radius: 4, x: 0, y: 2)
-                                .padding(.trailing, 4)
-                        }
-                    }
-                    .padding(.trailing, 24)
-                }
-                .padding(.top, 8)
-                
                 headerSection
                 
                 Text("Routines for today")
@@ -77,18 +56,24 @@ struct MyRoutineView: View {
                             ForEach(todaysRoutines) { routine in
                                 RoutineRowView(
                                     routine: routine,
-                                    onToggleDone: {
+                                    onToggleDone: {   if session.isGuest {     // ⭐⭐ يمنع تغيير حالة الروتين
+                                        showGuestAlert = true
+                                    } else {
                                         store.toggleDone(id: routine.id)
+                                    }
                                     }
                                 )
                                 .padding(.horizontal, 24)
                                 .contentShape(Rectangle())
                                 .onTapGesture {
-                                    editingRoutine = routine
+                                    if session.isGuest {
+                                        showGuestAlert = true
+                                    } else {
+                                        editingRoutine = routine
+                                    }
                                 }
                             }
                         }
-                        
                         Spacer()
                             .frame(height: 10)
                             .padding(.top, 8)
@@ -101,9 +86,34 @@ struct MyRoutineView: View {
                 Color.white
                     .ignoresSafeArea()
             )
+            .navigationTitle("My Routine")
+                   .navigationBarTitleDisplayMode(.inline)
+                   
+                   // MARK: Toolbar — زر الكالندر
+                   .toolbar {
+                       ToolbarItem(placement: .navigationBarTrailing) {
+                           Button {
+                               showFullCalendar = true
+                           } label: {
+                               Image(systemName: "calendar")
+                                   .font(.system(size: 18))
+                                   .foregroundColor(.black)
+                                   .frame(width: 38, height: 38)
+                                   .background(Color.white)
+                                   .clipShape(Circle())
+                                   .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                           }
+                       }
+                   }
+              
             
             Button {
-                showAddSheet = true
+                if session.isGuest {       // ⭐⭐ منع الإضافة
+                    showGuestAlert = true
+                } else {
+                    showAddSheet = true
+                }
+                
             } label: {
                 ZStack {
                     Circle()
@@ -167,6 +177,19 @@ struct MyRoutineView: View {
             MonthPickerView(selectedDate: $selectedDate)
                 .presentationDetents([.fraction(0.35)])
                 .presentationDragIndicator(.visible)
+        }
+        .alert("Sign in required", isPresented: $showGuestAlert) {
+            Button("Sign in") {
+                goToLogin = true
+            }
+            Button("Skip", role: .cancel) {}
+        } message: {
+            Text("You need to sign in to use this feature.")
+        }
+
+        .fullScreenCover(isPresented: $goToLogin) {
+            LoginView()
+                .environmentObject(session)
         }
         .overlay(
             Group {

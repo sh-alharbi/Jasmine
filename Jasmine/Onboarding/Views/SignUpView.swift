@@ -12,7 +12,9 @@ struct SignUpView: View {
     @State private var showCalendar = false
     @State private var dob = Date()
     var action: () -> Void = { }
-    
+    @EnvironmentObject var session: SessionStore
+    @State private var goToActivity = false
+
     func isOver18() -> Bool {
         let calendar = Calendar.current
         let age = calendar.dateComponents([.year], from: dob, to: Date()).year ?? 0
@@ -156,17 +158,21 @@ struct SignUpView: View {
                     ProgressView()
                 }
                 
-                Button(action: action){
+                Button {
+                    session.isGuest = true     // ← تشغيل وضع الضيف
+                    goToActivity = true
+                } label: {
                     Text("Continue as a guest")
-                        .foregroundColor(.black) // أخضر
+                        .foregroundColor(.black)
                         .frame(maxWidth: .infinity)
                         .padding()
                         .overlay(
                             RoundedRectangle(cornerRadius: 28)
                                 .stroke(Color(red: 153/255, green: 188/255, blue: 148/255), lineWidth: 2)
                         )
-                }.glassEffect()
-                
+                }
+                .glassEffect()
+
                 // Link to login
                 Button {
                     showLogin = true
@@ -184,10 +190,19 @@ struct SignUpView: View {
         }
         .fullScreenCover(isPresented: $showLogin) {
             LoginView()
+            .environmentObject(session)
         }
+        .fullScreenCover(isPresented: $goToActivity) {
+            ActivityView()
+                .environmentObject(session)
+                .environmentObject(RoutineStore())
+        }
+
     }
 }
 
 #Preview {
     SignUpView()
+    .environmentObject(SessionStore())
+
 }

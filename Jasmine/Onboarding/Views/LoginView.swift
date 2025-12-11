@@ -3,13 +3,13 @@ import SwiftUI
 struct LoginView: View {
     @EnvironmentObject var session: SessionStore
     @EnvironmentObject var routineStore: RoutineStore
-
+    
     @StateObject var viewModel = LoginViewModel()
     @State private var showSignup = false
     @State private var isLoggedIn = false
-
+    
     var action1: () -> Void = { }
-
+    
     var body: some View {
         ZStack {
             // الخلفية
@@ -22,46 +22,46 @@ struct LoginView: View {
                 endPoint: .bottom
             )
             .ignoresSafeArea()
-
+            
             VStack(spacing: 16) {
-
+                
                 Spacer().frame(height: 40)
-
+                
                 // اللوجو
                 Image("JasmineLogo")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 140)
-
+                
                 Text("Jasmine")
                     .font(.title3)
                     .fontWeight(.semibold)
                     .foregroundColor(.black.opacity(0.75))
                     .padding(.bottom, 20)
-
+                
                 // Email Field
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Email")
                         .font(.footnote)
                         .foregroundColor(.gray)
-
+                    
                     TextField("UserEmail@Gmail. com", text: $viewModel.email)
-                                           .padding()
-                                           .background(.white.opacity(0.9))
-                                           .cornerRadius(12)
-                                           .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
-                                           .autocorrectionDisabled(true)
-                                           .textInputAutocapitalization(.never)
-                                           .glassEffect(.clear).foregroundStyle(.black)
-                                   
+                        .padding()
+                        .background(.white.opacity(0.9))
+                        .cornerRadius(12)
+                        .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
+                        .autocorrectionDisabled(true)
+                        .textInputAutocapitalization(.never)
+                        .glassEffect(.clear).foregroundStyle(.black)
+                    
                 }
-
+                
                 // Password Field
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Password")
                         .font(.footnote)
                         .foregroundColor(.gray)
-
+                    
                     SecureField("*************", text: $viewModel.password)
                         .padding()
                         .background(.white.opacity(0.9))
@@ -69,7 +69,7 @@ struct LoginView: View {
                         .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
                         .glassEffect(.clear)
                 }
-
+                
                 // Error لو فيه
                 if let error = viewModel.error {
                     Text(error)
@@ -77,13 +77,15 @@ struct LoginView: View {
                         .font(.footnote)
                         .padding(.top, 4)
                 }
-
+                
                 // 🔐 Login Button
                 Button {
                     Task {
                         let success = await viewModel.login()
                         if success {
                             await session.loadSession()
+                            session.isGuest = false   // ← الآن المستخدم ليس ضيفاً
+
                             isLoggedIn = true
                         }
                     }
@@ -98,9 +100,12 @@ struct LoginView: View {
                         .padding(.top, 10)
                 }
                 .disabled(!viewModel.canSubmit || viewModel.isBusy)
-
+                
                 // Continue as guest
-                Button(action: action1) {
+                Button{
+                    session.isGuest = true        // ← تشغيل وضع الضيف
+                    isLoggedIn = true             // ← يفتح ActivityView
+                } label: {
                     Text("Continue as a guest")
                         .foregroundColor(.black)
                         .frame(maxWidth: .infinity)
@@ -111,11 +116,11 @@ struct LoginView: View {
                         )
                 }
                 .glassEffect()
-
+                
                 if viewModel.isBusy {
                     ProgressView().padding(.top, 4)
                 }
-
+                
                 // Link to Signup
                 Button {
                     showSignup = true
@@ -126,7 +131,7 @@ struct LoginView: View {
                         .foregroundColor(.black)
                         .padding(.top, 12)
                 }
-
+                
                 Spacer()
             }
             .padding(.horizontal, 28)

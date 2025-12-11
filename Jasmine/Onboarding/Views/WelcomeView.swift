@@ -10,7 +10,8 @@ import SwiftUI
 struct WelcomeView: View {
     @State private var showLogin = false
     @State private var showSignup = false
-
+    @EnvironmentObject var session: SessionStore
+    @State private var goToActivity = false
     var body: some View {
         ZStack {
             // الخلفية
@@ -67,7 +68,10 @@ struct WelcomeView: View {
                 .glassEffect()
 
                 // Guest
-                Button(action: {}) {
+                Button {
+                    session.isGuest = true
+                    goToActivity = true
+                } label: {
                     Text("Continue as a guest")
                         .underline()
                         .foregroundColor(.black)
@@ -81,9 +85,18 @@ struct WelcomeView: View {
         }
         .fullScreenCover(isPresented: $showLogin) {
             LoginView()
+            .environmentObject(session)
+
         }
         .fullScreenCover(isPresented: $showSignup) {
             SignUpView()
+                .environmentObject(session)
+
+        }
+        .fullScreenCover(isPresented: $goToActivity) {
+            ActivityView()
+                .environmentObject(session)
+                .environmentObject(RoutineStore())
         }
     }
 }
