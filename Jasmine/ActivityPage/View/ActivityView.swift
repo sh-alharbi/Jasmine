@@ -45,7 +45,7 @@ struct ActivityView: View {
 
                         rewardCard
 
-                        NavigationLink(destination: ContentView(onSignOut: { })) {
+                        NavigationLink(destination: AnalysisView(onSignOut: { })) {
                             scanCard
                         }
 

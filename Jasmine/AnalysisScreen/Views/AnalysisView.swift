@@ -11,7 +11,7 @@ import PhotosUI
 import Supabase
 #endif
 
-struct ContentView: View {
+struct AnalysisView: View {
 
     @EnvironmentObject var session: SessionStore
     @EnvironmentObject var routineStore: RoutineStore
@@ -21,7 +21,7 @@ struct ContentView: View {
      @State private var pendingContinue = false
     @State private var goToLogin = false
 
-    @StateObject private var vm = ContentViewModel()
+    @StateObject private var vm = AnalysisViewModel()
     @State private var selectedItem: PhotosPickerItem? = nil
     let darkGreen = Color(
         red: 31/255,
@@ -418,7 +418,7 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView(onSignOut: { })
+    AnalysisView(onSignOut: { })
         .environmentObject(SessionStore())
         .environmentObject(RoutineStore())
 }

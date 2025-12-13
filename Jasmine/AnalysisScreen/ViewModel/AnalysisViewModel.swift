@@ -11,7 +11,7 @@ import Supabase
 import Combine
 
 @MainActor
-class ContentViewModel: ObservableObject {
+class AnalysisViewModel: ObservableObject {
 
     @Published var selectedImage: UIImage? = nil
     @Published var isLoading = false
