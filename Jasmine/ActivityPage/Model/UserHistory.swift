@@ -4,10 +4,11 @@
 //
 //  Created by lamess on 14/06/1447 AH.
 //
+
 import Foundation
 
 struct UserHistory: Identifiable {
-    let id: String
+    let id: UUID
     let condition: String
     let date: String
     let imagePath: String
@@ -16,21 +17,13 @@ struct UserHistory: Identifiable {
     var formattedDate: String { date }
 
     var isClear: Bool {
-        condition.lowercased() == "normal" || condition.lowercased() == "clear"
+        let c = condition.lowercased()
+        return c == "normal" || c == "clear"
     }
 
-    // ✅ تقسيم المحتوى
-    var explanation: String {
-        extractSection(title: "Explanation")
-    }
-
-    var tips: String {
-        extractSection(title: "Tips")
-    }
-
-    var sources: String {
-        extractSection(title: "Sources")
-    }
+    var explanation: String { extractSection(title: "Explanation") }
+    var tips: String { extractSection(title: "Tips") }
+    var sources: String { extractSection(title: "Sources") }
 
     private func extractSection(title: String) -> String {
         let parts = recommendation.components(separatedBy: "###")
@@ -44,4 +37,3 @@ struct UserHistory: Identifiable {
         return "Not available"
     }
 }
-

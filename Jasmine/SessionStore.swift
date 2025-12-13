@@ -1,9 +1,3 @@
-//
-//  SessionStore.swift
-//  Jasmine
-//
-//  Created by lamess on 09/06/1447 AH.
-//
 import Foundation
 import Supabase
 import Combine
@@ -11,31 +5,50 @@ import Combine
 @MainActor
 class SessionStore: ObservableObject {
 
-    @Published var userID: String?
+    @Published var userID: UUID?
     @Published var isGuest: Bool = false
+    @Published var didShowRewardsAlertThisSession: Bool = false
+
 
     init() {
-        Task {
-            await loadSession()
-        }
+        Task { await loadSession() }
     }
 
     func loadSession() async {
         do {
             let session = try await Supa.client.auth.session
-            self.userID = session.user.id.uuidString
-            print("✅ Session Loaded:", self.userID ?? "nil")
+            self.userID = session.user.id
+            print("✅ Session Loaded:", self.userID?.uuidString ?? "nil")
+
+            if let uid = self.userID {
+                Task {
+                    do {
+                        try await JasmineService.ensureRewardRowExists(userID: uid)
+                        print("✅ reward_system row ensured")
+                    } catch {
+                        print("❌ ensureRewardRowExists error:", error.localizedDescription)
+                    }
+                }
+            }
+
         } catch {
-            print("❌ No active session in SessionStore")
+            print("❌ loadSession error:", error.localizedDescription)
             self.userID = nil
-            
         }
     }
 
     func signOut() async {
         try? await Supa.client.auth.signOut()
         self.userID = nil
-        self.isGuest = false     // يرجع عادي مو guest
-
+        self.isGuest = false
+        self.didShowRewardsAlertThisSession = false
     }
+
+
 }
+
+extension SessionStore {
+    var userUUID: UUID? { userID }
+}
+
+

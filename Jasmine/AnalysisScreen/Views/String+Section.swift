@@ -28,7 +28,6 @@ extension String {
         return self
             .replacingOccurrences(of: "**", with: "")
             .replacingOccurrences(of: "###", with: "")
-          //  .replacingOccurrences(of: "-", with: "")
             .replacingOccurrences(of: "1)", with: "")
             .replacingOccurrences(of: "2)", with: "")
             .replacingOccurrences(of: "3)", with: "")

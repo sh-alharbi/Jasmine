@@ -14,7 +14,6 @@ struct WelcomeView: View {
     @State private var goToActivity = false
     var body: some View {
         ZStack {
-            // الخلفية
             LinearGradient(
                 colors: [
                     Color(red: 153/255, green: 188/255, blue: 148/255),
@@ -39,7 +38,6 @@ struct WelcomeView: View {
 
                 Spacer().frame(height: 10)
 
-                // Login
                 Button {
                     showLogin = true
                 } label: {
@@ -53,7 +51,7 @@ struct WelcomeView: View {
                 }
                 .glassEffect()
 
-                // Signup
+                
                 Button {
                     showSignup = true
                 } label: {
@@ -67,7 +65,6 @@ struct WelcomeView: View {
                 }
                 .glassEffect()
 
-                // Guest
                 Button {
                     session.isGuest = true
                     goToActivity = true

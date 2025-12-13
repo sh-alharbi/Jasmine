@@ -2,8 +2,8 @@ import Foundation
 import UIKit
 
 enum SkinAPI {
-    // رابط الـ FastAPI على Render
-    static let baseURL = URL(string: "https://jasmine-api-o7cf.onrender.com")!
+    static let baseURL = URL(string: "https://jasmine-api-2nsv.onrender.com")!
+
     static let predictPath = "/predict"
 }
 

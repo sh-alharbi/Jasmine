@@ -23,7 +23,6 @@ struct ActivityView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 30) {
 
-                        // MARK: Header
                         HStack {
                             Text("Activity")
                                 .font(.largeTitle.bold())
@@ -44,15 +43,12 @@ struct ActivityView: View {
                         }
                         .padding(.top, 10)
 
-                        // MARK: Reward Card
                         rewardCard
 
-                        // MARK: Scan Button
                         NavigationLink(destination: ContentView(onSignOut: { })) {
                             scanCard
                         }
 
-                        // MARK: History Section
                         Text("Your History")
                             .font(.title3.bold())
                             .padding(.horizontal)
@@ -89,7 +85,6 @@ struct ActivityView: View {
                 }
                 .navigationBarHidden(true)
 
-                // ✅ POPUP
                 if vm.showPopUp, let selected = vm.selectedEntry {
                     LargeHistoryPopUp(entry: selected) {
                         vm.closePopUp()
@@ -99,23 +94,22 @@ struct ActivityView: View {
                 }
             }
 
-            // ✅ تحميل البيانات المعتمد رسميًا
             .onAppear {
                 Task {
-                    guard let uid = session.userID else {
-                        print("❌ User not logged in")
+                    guard let uid = session.userUUID else {
+                        print("❌ session.userUUID is nil")
                         return
                     }
-
                     await vm.loadHistory(userId: uid)
                 }
             }
+
+
 
         }
         .navigationBarBackButtonHidden(true)
     }
 
-    // MARK: - Reusable Top Button
     func topButton(icon: String) -> some View {
         Image(systemName: icon)
             .font(.system(size: 18))
@@ -127,7 +121,6 @@ struct ActivityView: View {
             .padding(.trailing, 4)
     }
 
-    // MARK: Reward Card
     var rewardCard: some View {
         HStack{
             
@@ -166,7 +159,6 @@ struct ActivityView: View {
         .padding(.horizontal)
     }
 
-    // MARK: Scan Card
     var scanCard: some View {
         HStack {
             Image(systemName: "hand.tap")
@@ -188,7 +180,6 @@ struct ActivityView: View {
         .padding(.horizontal)
     }
 
-    // MARK: History Cell
     func historyCell(_ item: UserHistory) -> some View {
         HStack(spacing: 14) {
 
@@ -218,5 +209,5 @@ struct ActivityView: View {
     ActivityView()
         .environmentObject(SessionStore())
         .environmentObject(RoutineStore())
-    
+
 }

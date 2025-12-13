@@ -16,24 +16,23 @@ struct ContentView: View {
     @EnvironmentObject var session: SessionStore
     @EnvironmentObject var routineStore: RoutineStore
 
-     // ⭐⭐ Alerts
      @State private var showAgeAlert = false
      @State private var showGuestSaveAlert = false
      @State private var pendingContinue = false
-    @State private var goToLogin = false  // ⭐⭐
+    @State private var goToLogin = false
 
     @StateObject private var vm = ContentViewModel()
     @State private var selectedItem: PhotosPickerItem? = nil
     let darkGreen = Color(
-        red: 31/255,   // 1F
-        green: 117/255,// 75
-        blue: 31/255   // 1F
+        red: 31/255,
+        green: 117/255,
+        blue: 31/255
     )
 
     let midGreen = Color(
-        red: 159/255,  // 9F
-        green: 203/255,// CB
-        blue: 154/255  // 9A
+        red: 159/255,
+        green: 203/255,
+        blue: 154/255
     )
 
 
@@ -79,56 +78,95 @@ struct ContentView: View {
                             .font(.title2).bold()
 
                         PhotosPicker(selection: $selectedItem, matching: .images) {
-                            VStack(spacing: 10) {
 
-                                ZStack {
-                                    Circle()
-                                        .fill(midGreen.opacity(0.25))
-                                        .frame(width: 60, height: 60)
-
-                                    Image(systemName: "icloud.and.arrow.up")
-                                        .font(.system(size: 26))
-                                        .foregroundColor(darkGreen)
-                                }
-
-                                Text("Tap to upload photo")
-                                    .font(.headline)
-                                    .foregroundColor(darkGreen)
-
-                                Text("Png , JPG")
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
-                            }
-                            .frame(width: 300,height: 290 )
-                            .background(
+                            ZStack {
                                 RoundedRectangle(cornerRadius: 40)
                                     .stroke(.gray.opacity(0.3), style: StrokeStyle(lineWidth: 2, dash: [6]))
-                            )
-                            .padding(.horizontal)
-                            
-                        }
-                        Spacer()
+                                    .frame(width: 300, height: 290)
 
-                        .onChange(of: selectedItem) { newItem in
-                            Task {
-                                if let data = try? await newItem?.loadTransferable(type: Data.self),
-                                   let uiImage = UIImage(data: data) {
-                                    vm.selectedImage = uiImage
-                                                            
-                                    if session.isGuest {
-                                        showAgeAlert = true
+                                if let img = vm.selectedImage {
+                                    Image(uiImage: img)
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 300, height: 290)
+                                        .clipShape(RoundedRectangle(cornerRadius: 40))
+
+                                    VStack {
+                                        HStack {
+                                            Spacer()
+                                            Image(systemName: "pencil.circle.fill")
+                                                .font(.system(size: 28))
+                                                .foregroundColor(.white)
+                                                .shadow(radius: 6)
+                                                .padding(12)
+                                        }
+                                        Spacer()
+
+                                        Text("Tap to change photo")
+                                            .font(.subheadline.weight(.semibold))
+                                            .foregroundColor(.white)
+                                            .padding(.bottom, 14)
+                                    }
+                                    .frame(width: 300, height: 290)
+                                    .background(
+                                        LinearGradient(
+                                            colors: [.black.opacity(0.35), .clear],
+                                            startPoint: .top,
+                                            endPoint: .center
+                                        )
+                                        .clipShape(RoundedRectangle(cornerRadius: 40))
+                                    )
+
+                                } else {
+                                    VStack(spacing: 10) {
+                                        ZStack {
+                                            Circle()
+                                                .fill(midGreen.opacity(0.25))
+                                                .frame(width: 60, height: 60)
+
+                                            Image(systemName: "icloud.and.arrow.up")
+                                                .font(.system(size: 26))
+                                                .foregroundColor(darkGreen)
+                                        }
+
+                                        Text("Tap to upload photo")
+                                            .font(.headline)
+                                            .foregroundColor(darkGreen)
+
+                                        Text("PNG, JPG")
+                                            .font(.caption)
+                                            .foregroundColor(.gray)
                                     }
                                 }
                             }
                         }
-
-                        if let img = vm.selectedImage {
-                            Image(uiImage: img)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 220, height: 160)
-                                .cornerRadius(12)
+                        .onChange(of: selectedItem) { newItem in
+                            guard let newItem else { return }
+                            Task {
+                                if let data = try? await newItem.loadTransferable(type: Data.self),
+                                   let uiImage = UIImage(data: data) {
+                                    vm.selectedImage = uiImage
+                                }
+                            }
                         }
+
+                        
+                        Spacer()
+
+                   
+                            .onChange(of: selectedItem) { newItem in
+                                guard let newItem else { return }
+
+                                Task {
+                                    if let data = try? await newItem.loadTransferable(type: Data.self),
+                                       let uiImage = UIImage(data: data) {
+                                        vm.selectedImage = uiImage
+                                    }
+                                }
+                            }
+
+
+                
 
                         Button("Continue") {
                             if session.isGuest && pendingContinue == false {
@@ -202,6 +240,7 @@ struct ContentView: View {
                                         )
                                         .font(.system(size: 15))
                                         .foregroundColor(.black)
+                                        .textSelection(.enabled)
 
 
                                     }
@@ -217,6 +256,7 @@ struct ContentView: View {
                                                 .section("Tips")
                                                 .cleanMarkdown() ?? ""
                                         )
+                                        .textSelection(.enabled)
                                         .font(.system(size: 15))
                                         .foregroundColor(.black)
 
@@ -230,18 +270,24 @@ struct ContentView: View {
                                             .font(.headline)
 
                                         Text(
-                                            result.chatgpt_explanation?
-                                                .section("Sources")
-                                                .cleanMarkdown() ?? ""
+                                            linkify(
+                                                result.chatgpt_explanation?
+                                                    .section("Sources")
+                                                    .cleanMarkdown() ?? ""
+                                            )
                                         )
+                                        .textSelection(.enabled)
                                         .font(.system(size: 15))
-                                        .foregroundColor(.black)
+
 
                                     }
 
                                     Button("Continue") {
                                         vm.step = 3
                                     }
+
+
+                                    
                                     .padding(.top, 10)
                                     .frame(width: 250)
                                     .background(Color(red: 153/255, green: 188/255, blue: 148/255))
@@ -293,23 +339,18 @@ struct ContentView: View {
                             .padding(.horizontal)
 
 
-                           
-                            Button("Save to History") {
-                                // ⭐⭐ إذا المستخدم ضيف → Alert
-                                if session.isGuest {
-                                    showGuestSaveAlert = true
-                                    return
-                                }
-
-                                Task {
-                                    guard let session = Supa.client.auth.currentSession else { return }
-                                    let userId = session.user.id.uuidString
-
-                                    vm.saveToHistory = true
-                                    await vm.saveToHistory(userId: userId)
-                                    vm.goToActivity = true
-                                }
+                        Button("Save to History") {
+                            if session.isGuest {
+                                showGuestSaveAlert = true
+                                return
                             }
+
+                            Task {
+                                guard let uid = session.userUUID else { return }
+                                await vm.saveToHistory(userId: uid)
+                            }
+                        }
+
                             .frame(width: 250, height: 54)
                             .background(Color(red: 153/255, green: 188/255, blue: 148/255))
                             .foregroundColor(.white)
@@ -317,9 +358,9 @@ struct ContentView: View {
                             .cornerRadius(26)
                         
                         Button("Skip") {
-                            vm.saveToHistory = false
                             vm.goToActivity = true
                         }
+
                         .frame(width: 250, height: 54)
                         .background(Color.gray.opacity(0.2))
                         .foregroundColor(.black)
@@ -345,31 +386,33 @@ struct ContentView: View {
                 .environmentObject(session)
                 .environmentObject(routineStore)
         }
-        // ⭐⭐ Alert +18
         .alert("Are you over 18 years old?", isPresented: $showAgeAlert) {
             Button("Yes") {
-                pendingContinue = true     // يسمح له يكمل
+                pendingContinue = true
+                vm.step = 2
             }
             Button("No", role: .cancel) {
-                vm.resetAll()             // ترجع الصفحة من جديد
+                vm.resetAll()
+                vm.goToActivity = true
             }
         }
-        // ⭐⭐ Alert حفظ نتيجة الضيف
-        .alert("Sign in required", isPresented: $showGuestSaveAlert) {
-            Button("Sign in") {
-                goToLogin = true   // يرجعه للوضع العادي (يروح للـ Welcome)
+        .alert("Sign up required", isPresented: $showGuestSaveAlert) {
+            Button("Sign up") {
+                goToLogin = true   
             }
             Button("Skip", role: .cancel) {
                 vm.goToActivity = true
             }
 
         } message: {
-            Text("Guests cannot save results. Please sign in to enable saving.")
+            Text("Guests cannot save results. Please sign up to enable saving.")
         }
         .fullScreenCover(isPresented: $goToLogin) {
             LoginView()
                 .environmentObject(session)
+                .environmentObject(routineStore)
         }
+
 
     }
 }

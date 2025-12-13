@@ -8,7 +8,7 @@
 import Foundation
 
 struct UserProfile: Identifiable {
-    let id: String          // Supabase user id (userid)
+    let id: String         
     var firstName: String
     var lastName: String
     var email: String

@@ -9,11 +9,11 @@ import SwiftUI
 
 struct SplashView: View {
     @State private var animate = false
-    @State private var isActive = false   // New
+    @State private var isActive = false   
 
     var body: some View {
         if isActive {
-            WelcomeView()   // الصفحة اللي بعدها
+            WelcomeView()
         } else {
             ZStack {
                 LinearGradient(
@@ -37,7 +37,6 @@ struct SplashView: View {
             .onAppear {
                 animate = true
                 
-                // الانتقال بعد مدة
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.7) {
                     withAnimation {
                         isActive = true
@@ -51,5 +50,5 @@ struct SplashView: View {
 #Preview {
   SplashView()
         .environmentObject(SessionStore())
-        .environmentObject(RoutineStore())   // ← أهم شيء
+        .environmentObject(RoutineStore())
 }

@@ -59,10 +59,46 @@ final class SignUpViewModel: ObservableObject {
             }
 
             print("✅ Auth user created:", response.user.id)
+            
+            struct UsersRow: Encodable {
+                let userid: UUID
+                let fname: String
+                let lname: String
+                let email: String
+                let rewardpreference: Bool
+                let notificationpreference: Bool
+                let date_of_birth: String
+            }
+
+            let userRow = UsersRow(
+                userid: response.user.id,
+                fname: fname,
+                lname: lname,
+                email: email,
+                rewardpreference: false,
+                notificationpreference: false,
+                date_of_birth: dobString
+            )
+
+            try await Supa.client
+                .from("users")
+                .insert(userRow)
+                .execute()
+
+            print("✅ users row created")
+
 
         } catch {
+            let msg = error.localizedDescription.lowercased()
+
+            if msg.contains("row-level security") {
+                print("ℹ️ RLS warning ignored:", error.localizedDescription)
+                return
+            }
+
             self.error = error.localizedDescription
             print("❌ signUp error:", error.localizedDescription)
         }
+
     }
 }

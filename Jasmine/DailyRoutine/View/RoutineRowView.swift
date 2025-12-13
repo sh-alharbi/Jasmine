@@ -12,9 +12,13 @@ struct RoutineRowView: View {
     
     private var timeString: String {
         let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "h:mm a"
         return formatter.string(from: routine.time)
     }
+
+
+
     
     var body: some View {
         HStack(spacing: 12) {

@@ -22,6 +22,9 @@ class ContentViewModel: ObservableObject {
     @Published var isSaving = false
     @Published var infoMsg: String? = nil
     @Published var goToActivity = false
+    
+
+
 
     func analyze() async {
         guard let selectedImage else {
@@ -42,10 +45,14 @@ class ContentViewModel: ObservableObject {
         }
     }
 
-    func saveToHistory(userId: String) async {
 
-        guard saveToHistory else { return }
-        guard let img = selectedImage else { return }
+    func saveToHistory(userId: UUID) async {
+
+        guard let selectedImage else {
+            infoMsg = "No image found."
+            return
+        }
+
         guard let result else {
             infoMsg = "No analysis result found."
             return
@@ -55,67 +62,55 @@ class ContentViewModel: ObservableObject {
         defer { isSaving = false }
 
         do {
-            let imageID = UUID().uuidString
-            let fileName = "\(imageID).jpg"
+            // 1) upload + insert skin_images
+            let (imageID, path) = try await JasmineService.uploadSkinImage(selectedImage, userID: userId)
 
-            guard let data = img.jpegData(compressionQuality: 0.9) else {
-                infoMsg = "Failed to encode image."
-                return
-            }
-
-            try await Supa.client.storage
-                .from("skin-images")
-                .upload(
-                    path: fileName,
-                    file: data,
-                    options: FileOptions(contentType: "image/jpeg", upsert: true)
-                )
-
-            struct SkinImageRow: Encodable {
-                let imageid: String
-                let userid: String
-                let uploaddate: String
-                let storagepath: String
-            }
-
-            let imageRow = SkinImageRow(
-                imageid: imageID,
-                userid: userId,
-                uploaddate: isoDateString(Date()),
-                storagepath: fileName
-            )
-
-            try await Supa.client
-                .from("skin_images")
-                .insert(imageRow)
-                .execute()
-
-            struct AnalysisRow: Encodable {
-                let analysisid: String
-                let imageid: String
-                let conditionlabel: String
-                let recommendation: String
-            }
-
-            let analysisRow = AnalysisRow(
-                analysisid: UUID().uuidString,
-                imageid: imageID,
-                conditionlabel: result.top1.label,
+            // 2) insert analysis
+            try await JasmineService.saveAnalysis(
+                imageID: imageID,
+                label: result.top1.label,
                 recommendation: result.chatgpt_explanation ?? "No recommendation"
             )
 
+            // 3) insert skin_assessment_history
+            struct HistoryRow: Encodable {
+                let historyid: UUID
+                let userid: UUID
+                let historydata: String
+                let date: String
+            }
+
+            let historyText = """
+            Condition: \(result.top1.label)
+            ImagePath: \(path)
+            Recommendation:
+            \(result.chatgpt_explanation ?? "No recommendation")
+            """
+
+            let historyRow = HistoryRow(
+                historyid: UUID(),
+                userid: userId,
+                historydata: historyText,
+                date: isoDateString(Date()) 
+            )
+
             try await Supa.client
-                .from("analysis")
-                .insert(analysisRow)
+                .from("skin_assessment_history")
+                .insert(historyRow)
                 .execute()
 
             infoMsg = "Saved to history ✅"
+            goToActivity = true
 
         } catch {
-            infoMsg = "Save failed."
-            print("❌ Save error:", error.localizedDescription)
+            infoMsg = error.localizedDescription
+            print("❌ saveToHistory error:", error)
         }
     }
+
+    
+
+
 
     private func isoDateString(_ date: Date) -> String {
         let f = DateFormatter()
@@ -127,15 +122,18 @@ class ContentViewModel: ObservableObject {
     }
     
     @MainActor
-    func resetAll() {
-        self.step = 1
-        self.selectedImage = nil
-        self.result = nil
-        self.errorMsg = nil
-        self.isLoading = false
-        self.goToActivity = false
-        self.saveToHistory = false
+func resetAll() {
+    self.step = 1
+    self.selectedImage = nil
+    self.result = nil
+    self.errorMsg = nil
+    self.isLoading = false
+    self.goToActivity = false
+    self.saveToHistory = false
+    
+    
+}
     }
 
-}
+
 

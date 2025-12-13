@@ -7,12 +7,12 @@ struct LoginView: View {
     @StateObject var viewModel = LoginViewModel()
     @State private var showSignup = false
     @State private var isLoggedIn = false
+
     
     var action1: () -> Void = { }
     
     var body: some View {
         ZStack {
-            // الخلفية
             LinearGradient(
                 colors: [
                     Color(red: 153/255, green: 188/255, blue: 148/255),
@@ -27,7 +27,6 @@ struct LoginView: View {
                 
                 Spacer().frame(height: 40)
                 
-                // اللوجو
                 Image("JasmineLogo")
                     .resizable()
                     .scaledToFit()
@@ -39,13 +38,12 @@ struct LoginView: View {
                     .foregroundColor(.black.opacity(0.75))
                     .padding(.bottom, 20)
                 
-                // Email Field
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Email")
                         .font(.footnote)
                         .foregroundColor(.gray)
                     
-                    TextField("UserEmail@Gmail. com", text: $viewModel.email)
+                    TextField("UserEmail@Gmail. com   ", text: $viewModel.email)
                         .padding()
                         .background(.white.opacity(0.9))
                         .cornerRadius(12)
@@ -56,7 +54,6 @@ struct LoginView: View {
                     
                 }
                 
-                // Password Field
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Password")
                         .font(.footnote)
@@ -69,8 +66,8 @@ struct LoginView: View {
                         .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
                         .glassEffect(.clear)
                 }
+               
                 
-                // Error لو فيه
                 if let error = viewModel.error {
                     Text(error)
                         .foregroundColor(.red)
@@ -78,13 +75,12 @@ struct LoginView: View {
                         .padding(.top, 4)
                 }
                 
-                // 🔐 Login Button
                 Button {
                     Task {
                         let success = await viewModel.login()
                         if success {
                             await session.loadSession()
-                            session.isGuest = false   // ← الآن المستخدم ليس ضيفاً
+                            session.isGuest = false
 
                             isLoggedIn = true
                         }
@@ -101,10 +97,9 @@ struct LoginView: View {
                 }
                 .disabled(!viewModel.canSubmit || viewModel.isBusy)
                 
-                // Continue as guest
                 Button{
-                    session.isGuest = true        // ← تشغيل وضع الضيف
-                    isLoggedIn = true             // ← يفتح ActivityView
+                    session.isGuest = true
+                    isLoggedIn = true
                 } label: {
                     Text("Continue as a guest")
                         .foregroundColor(.black)
@@ -121,7 +116,6 @@ struct LoginView: View {
                     ProgressView().padding(.top, 4)
                 }
                 
-                // Link to Signup
                 Button {
                     showSignup = true
                 } label: {
@@ -136,13 +130,13 @@ struct LoginView: View {
             }
             .padding(.horizontal, 28)
         }
-        // Signup
+        
+       
         .fullScreenCover(isPresented: $showSignup) {
             SignUpView()
                 .environmentObject(session)
                 .environmentObject(routineStore)
         }
-        // بعد تسجيل الدخول
         .fullScreenCover(isPresented: $isLoggedIn) {
             ActivityView()
                 .environmentObject(session)

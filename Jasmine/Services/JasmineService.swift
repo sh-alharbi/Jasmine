@@ -2,46 +2,47 @@
 //  JasmineService.swift
 //  Jasmine
 //
-//  Created by Shahad Alharbi on 11/5/25.
-//
 
 import Foundation
 import UIKit
 import Supabase
 
+
 struct SkinImageRow: Codable {
-    let imageid: String
-    let userid: String
+    let imageid: UUID
+    let userid: UUID
     let uploaddate: String
     let storagepath: String
 }
 
 struct AnalysisRow: Codable {
-    let analysisid: String
-    let imageid: String
+    let analysisid: UUID
+    let imageid: UUID
     let conditionlabel: String
     let recommendation: String
+    let status: String
 }
 
 struct DailyRoutineRow: Codable {
-    let routineid: String
-    let userid: String
+    let routineid: UUID
+    let userid: UUID
     let routinename: String
     let isdone: Bool
     let time: String?
     let routinetype: String?
 }
 
+
 enum JasmineService {
     static let bucket = "skin-images"
 
-    static func uploadSkinImage(_ image: UIImage, userID: String) async throws -> (imageID: String, path: String) {
+    static func uploadSkinImage(_ image: UIImage, userID: UUID) async throws -> (imageID: UUID, path: String) {
         guard let data = image.jpegData(compressionQuality: 0.9) else {
             throw NSError(domain: "ImageEncoding", code: -1)
         }
 
-        let imageID = UUID().uuidString
-        let path = "users/\(userID)/\(imageID).jpg"
+        let imageID = UUID()
+        let path = "users/\(userID.uuidString)/\(imageID.uuidString).jpg"
 
         try await Supa.client.storage
             .from(bucket)
@@ -57,6 +58,7 @@ enum JasmineService {
             uploaddate: ISO8601DateFormatter().string(from: Date()),
             storagepath: path
         )
+
         _ = try await Supa.client
             .from("skin_images")
             .insert(row)
@@ -65,57 +67,87 @@ enum JasmineService {
         return (imageID, path)
     }
 
-    static func saveAnalysis(imageID: String, label: String, recommendation: String) async throws {
-        let row = AnalysisRow(
-            analysisid: UUID().uuidString,
+    static func saveAnalysis(imageID: UUID, label: String, recommendation: String, status: String = "draft") async throws -> UUID {
+
+        struct InsertRow: Encodable {
+            let analysisid: UUID
+            let imageid: UUID
+            let conditionlabel: String
+            let recommendation: String
+            let status: String
+        }
+
+        let newId = UUID()
+
+        let row = InsertRow(
+            analysisid: newId,
             imageid: imageID,
             conditionlabel: label,
-            recommendation: recommendation
+            recommendation: recommendation,
+            status: status
         )
+
         _ = try await Supa.client
             .from("analysis")
             .insert(row)
             .execute()
+
+        return newId
     }
 
-    static func markRoutine(userID: String, routine: String, routineType: String? = nil) async throws {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm:ss"
-        let timeString = formatter.string(from: Date())
 
-        let log = DailyRoutineRow(
-            routineid: UUID().uuidString,
+    static func upsertRoutine(
+        routineID: UUID,
+        userID: UUID,
+        routineName: String,
+        routineType: String?,
+        isDone: Bool,
+        time: String?
+    ) async throws {
+
+        let cleanTime: String? = {
+            guard let t = time?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  !t.isEmpty else { return nil }
+            return t
+        }()
+
+        let row = DailyRoutineRow(
+            routineid: routineID,
             userid: userID,
-            routinename: routine,
-            isdone: true,
-            time: timeString,
+            routinename: routineName,
+            isdone: isDone,
+            time: cleanTime,
             routinetype: routineType
         )
 
         _ = try await Supa.client
             .from("daily_routine")
-            .insert(log)
+            .upsert(row, onConflict: "routineid")
             .execute()
+    }
 
-        struct RewardRow: Decodable { let points: Int? }
+    static func upsertRewardPoints(
+        userID: UUID,
+        points: Int,
+    ) async throws {
 
-        let res = try await Supa.client
-            .from("reward_system")
-            .select("points")
-            .eq("userid", value: userID)
-            .single()
-            .execute()
+        struct RewardUpsert: Encodable {
+            let userid: UUID
+            let points: Int
+        }
 
-        let reward = try JSONDecoder().decode(RewardRow.self, from: res.data)
-        let currentPoints = reward.points ?? 0
-        let newPoints = currentPoints + 5
-
-        struct RewardUpdate: Encodable { let points: Int }
+        let row = RewardUpsert(
+            userid: userID,
+            points: points,
+        )
 
         _ = try await Supa.client
             .from("reward_system")
-            .update(RewardUpdate(points: newPoints))
-            .eq("userid", value: userID)
+            .upsert(row, onConflict: "userid")
             .execute()
+    }
+
+    static func ensureRewardRowExists(userID: UUID) async throws {
+        try await upsertRewardPoints(userID: userID, points: 0)
     }
 }

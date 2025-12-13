@@ -5,6 +5,7 @@
 //  Created by lamess on 14/06/1447 AH.
 //
 import SwiftUI
+import Foundation
 
 struct LargeHistoryPopUp: View {
 
@@ -20,7 +21,6 @@ struct LargeHistoryPopUp: View {
 
             VStack(alignment: .leading, spacing: 14) {
 
-                // ✅ العنوان + زر الإغلاق
                 HStack {
                     Text(entry.condition.capitalized)
                         .font(.headline)
@@ -44,21 +44,18 @@ struct LargeHistoryPopUp: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
 
-                        // ✅ Explanation
                         sectionView(
                             title: "Explanation",
                             icon: "doc.text",
                             text: clean(entry.explanation)
                         )
 
-                        // ✅ Tips
                         sectionView(
                             title: "Tips",
                             icon: "lightbulb",
                             text: clean(entry.tips)
                         )
 
-                        // ✅ Sources
                         sectionView(
                             title: "Sources",
                             icon: "link",
@@ -69,28 +66,34 @@ struct LargeHistoryPopUp: View {
                 }
             }
             .padding()
-            // ✅ حجم أصغر ومربع أكثر
             .frame(width: 354, height: 582)
             .background(Color.white)
-            .clipShape(RoundedRectangle(cornerRadius: 25)) // أقل دائرية
+            .clipShape(RoundedRectangle(cornerRadius: 25))
             .shadow(color: .black.opacity(0.15), radius: 8)
         }
     }
 
-    // ✅ شكل موحد لكل الأقسام – أسود بالكامل
     func sectionView(title: String, icon: String, text: String, isSource: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Label(title, systemImage: icon)
                 .font(.subheadline.bold())
                 .foregroundColor(.black)
 
-            Text(text)
-                .font(.system(size: isSource ? 12 : 13))
-                .foregroundColor(.black)
+            if isSource {
+                      Text(linkify(text))
+                          .font(.system(size: 12))
+                          .foregroundColor(.black)
+                          .tint(.blue)
+                          .textSelection(.enabled)
+            } else {
+                      Text(text)
+                          .font(.system(size: 13))
+                          .foregroundColor(.black)
+                          .textSelection(.enabled)
+                  }
         }
     }
 
-    // ✅ تنظيف النص من ** والأرقام
     func clean(_ text: String) -> String {
         text
             .replacingOccurrences(of: "**", with: "")
