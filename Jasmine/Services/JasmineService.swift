@@ -20,7 +20,6 @@ struct AnalysisRow: Codable {
     let imageid: UUID
     let conditionlabel: String
     let recommendation: String
-    let status: String
 }
 
 struct DailyRoutineRow: Codable {
@@ -67,14 +66,13 @@ enum JasmineService {
         return (imageID, path)
     }
 
-    static func saveAnalysis(imageID: UUID, label: String, recommendation: String, status: String = "draft") async throws -> UUID {
+    static func saveAnalysis(imageID: UUID, label: String, recommendation: String) async throws -> UUID {
 
         struct InsertRow: Encodable {
             let analysisid: UUID
             let imageid: UUID
             let conditionlabel: String
             let recommendation: String
-            let status: String
         }
 
         let newId = UUID()
@@ -84,7 +82,6 @@ enum JasmineService {
             imageid: imageID,
             conditionlabel: label,
             recommendation: recommendation,
-            status: status
         )
 
         _ = try await Supa.client

@@ -150,6 +150,7 @@ struct ProfileView: View {
                 }
             }
            
+            .navigationBarBackButtonHidden(true)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button { dismiss() } label: {
@@ -160,6 +161,7 @@ struct ProfileView: View {
                     }
                 }
             }
+
 
 
 
