@@ -2,11 +2,11 @@
 //  SignUpView.swift
 //  Jasmine
 //
-
 import SwiftUI
 import Supabase
 
 struct SignUpView: View {
+
     @StateObject var viewModel = SignUpViewModel()
 
     @EnvironmentObject var session: SessionStore
@@ -14,14 +14,7 @@ struct SignUpView: View {
 
     @State private var showLogin = false
     @State private var showCalendar = false
-    @State private var dob = Date()
     @State private var goToActivity = false
-
-    func isOver18() -> Bool {
-        let calendar = Calendar.current
-        let age = calendar.dateComponents([.year], from: dob, to: Date()).year ?? 0
-        return age >= 18
-    }
 
     var body: some View {
         ZStack {
@@ -49,87 +42,84 @@ struct SignUpView: View {
                     .foregroundColor(.black.opacity(0.75))
                     .padding(.bottom, 10)
 
+                // First Name
                 TextField("First Name", text: $viewModel.fname)
                     .padding()
                     .background(.white.opacity(0.9))
                     .cornerRadius(12)
                     .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
 
+                // Last Name
                 TextField("Last Name", text: $viewModel.lname)
                     .padding()
                     .background(.white.opacity(0.9))
                     .cornerRadius(12)
                     .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
 
-                Button {
-                    showCalendar.toggle()
-                } label: {
-                    HStack {
-                        Text(dob.formatted(date: .abbreviated, time: .omitted))
-                            .foregroundColor(.black.opacity(0.7))
-                        Spacer()
-                        Image(systemName: "calendar")
-                            .foregroundColor(.gray)
-                    }
-                    .padding()
-                    .background(Color.white.opacity(0.9))
-                    .cornerRadius(12)
-                    .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
+                // DOB (custom popup)
+                HStack {
+                    Text(viewModel.dob.formatted(date: .abbreviated, time: .omitted))
+                        .foregroundColor(.black.opacity(0.7))
+
+                    Spacer()
+
+                    Image(systemName: "calendar")
+                        .foregroundColor(.gray)
                 }
-                .popover(isPresented: $showCalendar, arrowEdge: .bottom) {
-                    DatePicker(
-                        "Date",
-                        selection: $dob,
-                        displayedComponents: .date
-                    )
-                    .datePickerStyle(.graphical)
-                    .labelsHidden()
-                    .padding()
+                .padding()
+                .background(Color.white.opacity(0.9))
+                .cornerRadius(12)
+                .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
+                .onTapGesture {
+                    withAnimation { showCalendar = true }
                 }
 
+                // Email
                 TextField("Email", text: $viewModel.email)
                     .keyboardType(.emailAddress)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled(true)
                     .padding()
                     .background(.white.opacity(0.9))
                     .cornerRadius(12)
                     .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled(true)
 
+                // Password
                 SecureField("Password", text: $viewModel.password)
                     .padding()
                     .background(.white.opacity(0.9))
                     .cornerRadius(12)
                     .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
 
+                // Error
                 if let error = viewModel.error {
                     Text(error)
                         .foregroundColor(.red)
                         .font(.footnote)
                 }
 
+                // Create Account
                 Button {
-                    if isOver18() {
-                        Task { await viewModel.signUp() }
-                    } else {
-                        viewModel.error = "You must be 18 years or older"
-                    }
+                    Task { await viewModel.signUp() }
                 } label: {
                     Text("Create account")
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color(red: 153/255, green: 188/255, blue: 148/255))
+                        .background(
+                            viewModel.canSubmit
+                            ? Color(red: 153/255, green: 188/255, blue: 148/255)
+                            : Color(red: 153/255, green: 188/290, blue: 148/255)    )
                         .foregroundColor(.white)
                         .font(.headline)
                         .cornerRadius(28)
-                        .padding(.top, 10)
                 }
-                .disabled(!viewModel.canSubmit || viewModel.isBusy)
+//                .disabled(!viewModel.canSubmit || viewModel.isBusy)
 
                 if viewModel.isBusy {
                     ProgressView()
                 }
 
+                // Guest
                 Button {
                     session.isGuest = true
                     goToActivity = true
@@ -145,6 +135,7 @@ struct SignUpView: View {
                 }
                 .glassEffect()
 
+                // Login
                 Button {
                     showLogin = true
                 } label: {
@@ -152,12 +143,41 @@ struct SignUpView: View {
                         .font(.footnote)
                         .underline()
                         .foregroundColor(.black)
-                        .padding(.top, 12)
                 }
 
                 Spacer()
             }
             .padding(.horizontal, 28)
+
+            // 🔽 DOB popup
+            if showCalendar {
+                Color.black.opacity(0.25)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation { showCalendar = false }
+                    }
+
+                VStack(spacing: 12) {
+                    DatePicker(
+                        "",
+                        selection: $viewModel.dob,
+                        displayedComponents: .date
+                    )
+                    .datePickerStyle(.graphical)
+                    .labelsHidden()
+
+                    Button("Done") {
+                        withAnimation { showCalendar = false }
+                    }
+                    .font(.headline)
+                }
+                .padding()
+                .background(.white)
+                .cornerRadius(20)
+                .shadow(radius: 12)
+                .frame(width: 330, height: 380)
+                .transition(.scale)
+            }
         }
         .fullScreenCover(isPresented: $showLogin) {
             LoginView()
@@ -167,13 +187,9 @@ struct SignUpView: View {
         .fullScreenCover(isPresented: $goToActivity) {
             ActivityView()
                 .environmentObject(session)
-                .environmentObject(routineStore)  
+                .environmentObject(routineStore)
         }
     }
 }
 
-#Preview {
-    SignUpView()
-        .environmentObject(SessionStore())
-        .environmentObject(RoutineStore())
-}
+#Preview { SignUpView() .environmentObject(SessionStore()) .environmentObject(RoutineStore()) }

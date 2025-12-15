@@ -19,25 +19,41 @@ final class SignUpViewModel: ObservableObject {
     @Published var isBusy = false
     @Published var error: String?
 
+    var isOver18: Bool {
+        let calendar = Calendar.current
+        let age = calendar.dateComponents([.year], from: dob, to: Date()).year ?? 0
+        return age >= 18
+    }
+
     var canSubmit: Bool {
         !fname.isEmpty &&
         !lname.isEmpty &&
         !email.isEmpty &&
-        !password.isEmpty
+        !password.isEmpty &&
+        isOver18
+        
     }
+    private func formattedDOB() -> String {
+          let df = DateFormatter()
+          df.calendar = Calendar(identifier: .gregorian)
+          df.locale = Locale(identifier: "en_US_POSIX")
+          df.timeZone = TimeZone(secondsFromGMT: 0)
+          df.dateFormat = "yyyy-MM-dd"
+          return df.string(from: dob)
+      }
 
     func signUp() async {
         error = nil
+        guard isOver18 else {
+              error = "You must be 18 years or older"
+              return
+          }
         isBusy = true
         defer { isBusy = false }
 
         do {
-            let df = DateFormatter()
-            df.calendar = Calendar(identifier: .gregorian)
-            df.locale = Locale(identifier: "en_US_POSIX")
-            df.timeZone = TimeZone(secondsFromGMT: 0)
-            df.dateFormat = "yyyy-MM-dd"
-            let dobString = df.string(from: dob)
+            let dobString = formattedDOB()
+        
 
             let metadata: [String: AnyJSON] = [
                 "fname": .string(fname),
