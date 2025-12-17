@@ -5,7 +5,7 @@
 //  Created by lamess on 14/06/1447 AH.
 //
 
-struct AnalysisModel: Codable {
+struct AڈnalysisModel: Codable {
     let analysisid: String
     let imageid: String
     let conditionlabel: String

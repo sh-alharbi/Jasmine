@@ -62,17 +62,14 @@ class AnalysisViewModel: ObservableObject {
         defer { isSaving = false }
 
         do {
-            // 1) upload + insert skin_images
             let (imageID, path) = try await JasmineService.uploadSkinImage(selectedImage, userID: userId)
 
-            // 2) insert analysis
             try await JasmineService.saveAnalysis(
                 imageID: imageID,
                 label: result.top1.label,
                 recommendation: result.chatgpt_explanation ?? "No recommendation"
             )
 
-            // 3) insert skin_assessment_history
             struct HistoryRow: Encodable {
                 let historyid: UUID
                 let userid: UUID
@@ -95,7 +92,7 @@ class AnalysisViewModel: ObservableObject {
             )
 
             try await Supa.client
-                .from("skin_assessment_history")
+                .from("skin_analysis_history")
                 .insert(historyRow)
                 .execute()
 
@@ -104,7 +101,7 @@ class AnalysisViewModel: ObservableObject {
 
         } catch {
             infoMsg = error.localizedDescription
-            print("❌ saveToHistory error:", error)
+            print("saveToHistory error:", error)
         }
     }
 

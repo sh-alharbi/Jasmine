@@ -59,7 +59,7 @@ enum JasmineService {
         )
 
         _ = try await Supa.client
-            .from("skin_images")
+            .from("skin_image")
             .insert(row)
             .execute()
 

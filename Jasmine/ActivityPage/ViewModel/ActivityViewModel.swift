@@ -50,7 +50,7 @@ class ActivityViewModel: ObservableObject {
         
         do {
             let imageResponse = try await Supa.client
-                .from("skin_images")
+                .from("skin_image")
                 .select()
                 .eq("userid", value: userId)
                 .order("uploaddate", ascending: false)
