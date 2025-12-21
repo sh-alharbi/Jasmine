@@ -9,7 +9,7 @@ import SwiftUI
 
 struct RoutineSheetView: View {
     @EnvironmentObject var store: RoutineStore
-    @ObservedObject var viewModel: RoutineFormViewModel
+    @StateObject var viewModel: RoutineFormViewModel
     
     let selectedDate: Date
     var onSaved: (Routine) -> Void
